@@ -10,5 +10,3 @@ chromedriver-autoinstaller
 psycopg2-binary
 gspread
 oauth2client
-redis
-rq
