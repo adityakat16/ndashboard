@@ -5,11 +5,11 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    result = ""
+    data = None
     if request.method == "POST":
-        query = request.form.get("query", "")
-        result = run_scraper(query)
-    return render_template("index.html", data=result)
+        stock = request.form["stock"]
+        data = run_scraper(stock)
+    return render_template("result.html", data=data)
 
 if __name__ == "__main__":
     app.run(debug=True)
