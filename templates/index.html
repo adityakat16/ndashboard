@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Results</title></head>
+<body>
+  <h1>Enter Query</h1>
+  <form method="post">
+    <input type="text" name="query" required>
+    <button type="submit">Scrape</button>
+  </form>
+  {% if data %}
+    <h2>Result:</h2>
+    <p>{{ data }}</p>
+  {% endif %}
+</body>
+</html>
+
