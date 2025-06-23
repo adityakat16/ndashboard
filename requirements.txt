@@ -1,4 +1,10 @@
-flask
-requests
-beautifulsoup4
+Flask
+selenium
+gspread
+oauth2client
+undetected-chromedriver
 gunicorn
+webdriver-manager
+setuptools
+chromedriver-autoinstaller
+psycopg2-binary
