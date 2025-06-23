@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html>
-<head><title>Results</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Screener.in Scraper</title>
+</head>
 <body>
-  <h1>Enter Query</h1>
+  <h1>Fetch Screener.in Data</h1>
   <form method="post">
-    <input type="text" name="query" required>
-    <button type="submit">Scrape</button>
+    <input name="code" placeholder="Enter stock code (e.g. RELIANCE)" required>
+    <button type="submit">Fetch</button>
   </form>
-  {% if data %}
-    <h2>Result:</h2>
-    <p>{{ data }}</p>
-  {% endif %}
+
+  <pre style="background:#f5f5f5;padding:10px;margin-top:20px;">
+    {{ result }}
+  </pre>
 </body>
 </html>
-
