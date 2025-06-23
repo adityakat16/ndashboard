@@ -1,7 +1,3 @@
-Flask
-selenium
-undetected-chromedriver
-beautifulsoup4
+flask
 requests
-lxml
-pandas
+beautifulsoup4
