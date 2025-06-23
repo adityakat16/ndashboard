@@ -1,18 +1,13 @@
-from selenium.webdriver.chrome.options import Options
+from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-import undetected_chromedriver as uc
+from selenium.webdriver.chrome.options import Options
 
-def run_scraper(stock):
-    try:
-        options = uc.ChromeOptions()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-        driver = uc.Chrome(options=options)
-        driver.get(f"https://www.google.com/search?q={stock}+stock")
-        result = driver.title
-        driver.quit()
-        return result
-    except Exception as e:
-        return f"❌ Error during scraping: {e}"
+driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"), options=chrome_options)
+driver.get("https://example.com")
+print(driver.title)
+driver.quit()
