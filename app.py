@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # --- IMPORTANT: Environment Variable for Local Processor URL ---
 # This will be set on Render's dashboard for your Web Service
-LOCAL_PROCESSOR_URL = os.environ.get('LOCAL_PROCESSOR_URL')
+LOCAL_PROCESSOR_URL = os.environ.get(' https://c382-2401-4900-4e59-93ce-fcea-48c-4413-ba5b.ngrok-free.app')
 if not LOCAL_PROCESSOR_URL:
     logging.error("LOCAL_PROCESSOR_URL environment variable not set. Local processing will fail.")
     # In a production app, you might raise an error or redirect to an error page.
