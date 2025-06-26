@@ -120,9 +120,9 @@
         setInterval(updateGreetingAndTimestamp, 1000);
 
         // Get references to the form elements
-        getDataButton.classList.add('clicked'); // Add a class for styling
-        getDataButton.disabled = true; // Disable to prevent multiple clicks
-        getDataButton.textContent = 'Processing...';
+        const stockForm = document.getElementById('stockForm');
+        const symbolInput = document.getElementById('symbolInput');
+        const getDataButton = document.getElementById('getDataButton');
             
 
         // Add event listener to the form's submit event
