@@ -146,18 +146,43 @@
             margin-right: 8px;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            h1 {
-                font-size: 1.8rem;
-            }
-            th, td {
-                padding: 10px;
-                font-size: 0.9rem;
-            }
+        .spinner {
+            border: 8px solid #444; /* Light grey */
+            border-top: 8px solid #4CAF50; /* Green */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto; /* Centered with margin */
+            display: block; /* Shown by default until data loads */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+        .refresh-button {
+            background-color: #5a67d8; /* Blue-grey for refresh */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            display: inline-block;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+        .refresh-button:hover {
+            background-color: #434c9c;
+            transform: translateY(-2px);
         }
     </style>
     <!-- Firebase SDK (Standard for Canvas Apps) -->
@@ -196,7 +221,8 @@
                 } else {
                     console.warn('Firebase config not provided. Running without Firebase.');
                 }
-                loadSheetData(); // Load data after Firebase is potentially initialized
+                // Call loadSheetData on initial page load
+                loadSheetData();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 showMessage('Error initializing application. Please try again.');
@@ -231,37 +257,50 @@
 
     <div class="container">
         <h1>Google Sheet Data</h1>
-        <div id="loadingSpinner" class="loading-spinner"></div>
+        <div id="loadingSpinner" class="spinner"></div>
+        <div id="statusMessage" class="status-message">Loading data...</div>
         <div id="tableContainer">
             <!-- Table will be loaded here by JavaScript -->
         </div>
+        <button id="refreshButton" class="refresh-button">Refresh Data</button>
     </div>
 
     <script>
-        // Simulate fetching data from a Google Sheet
+        let refreshIntervalId; // To store the ID of the auto-refresh interval
+
+        // Function to simulate fetching data from a Google Sheet
         async function fetchSheetData() {
             // In a real application, you would use the Google Sheets API here.
-            // This is a placeholder for demonstration purposes.
+            // This would likely be via an endpoint on your Render app (e.g., /get_sheet_data)
+            // that then reads from your Google Sheet.
+
+            // For demonstration, we'll simulate data that sometimes isn't ready
+            const isDataReady = Math.random() > 0.3; // 70% chance data is ready
+
             return new Promise(resolve => {
                 setTimeout(() => {
-                    const data = [
-                        // Row 1: Merged header
-                        ["Product Inventory Overview", "", "", "", ""],
-                        // Row 2: Sub-headers
-                        ["Category", "Item Name", "Quantity", "Unit Price ($)", "Status"],
-                        // Data rows
-                        ["Electronics", "Laptop Pro X", 5, 1200, "In Stock"],
-                        ["Electronics", "Wireless Mouse", 15, 25, "In Stock"],
-                        ["Electronics", "Mechanical Keyboard", 10, 75, "Low Stock"],
-                        ["Books", "Sci-Fi Epic Vol. 1", 20, 15, "In Stock"],
-                        ["Books", "Fantasy Saga Collection", 8, 40, "Low Stock"],
-                        ["Home Goods", "Smart Coffee Maker", 3, 80, "Out of Stock"],
-                        ["Home Goods", "High-Power Blender", 7, 60, "In Stock"],
-                        ["Apparel", "Sport T-Shirt (M)", 25, 20, "In Stock"],
-                        ["Apparel", "Winter Jacket (L)", 2, 150, "Low Stock"],
-                        ["Groceries", "Organic Apples (kg)", 50, 3, "In Stock"]
-                    ];
-                    resolve(data);
+                    if (isDataReady) {
+                        const data = [
+                            // Row 1: Merged header
+                            ["Product Inventory Overview", "", "", "", ""],
+                            // Row 2: Sub-headers
+                            ["Category", "Item Name", "Quantity", "Unit Price ($)", "Status"],
+                            // Data rows
+                            ["Electronics", "Laptop Pro X", 5, 1200, "In Stock"],
+                            ["Electronics", "Wireless Mouse", 15, 25, "In Stock"],
+                            ["Electronics", "Mechanical Keyboard", 10, 75, "Low Stock"],
+                            ["Books", "Sci-Fi Epic Vol. 1", 20, 15, "In Stock"],
+                            ["Books", "Fantasy Saga Collection", 8, 40, "Low Stock"],
+                            ["Home Goods", "Smart Coffee Maker", 3, 80, "Out of Stock"],
+                            ["Home Goods", "High-Power Blender", 7, 60, "In Stock"],
+                            ["Apparel", "Sport T-Shirt (M)", 25, 20, "In Stock"],
+                            ["Apparel", "Winter Jacket (L)", 2, 150, "Low Stock"],
+                            ["Groceries", "Organic Apples (kg)", 50, 3, "In Stock"]
+                        ];
+                        resolve({ status: 'ready', data: data });
+                    } else {
+                        resolve({ status: 'not_ready', message: 'Data is still being processed.' });
+                    }
                 }, 1500); // Simulate network delay
             });
         }
@@ -270,82 +309,112 @@
         async function loadSheetData() {
             const loadingSpinner = document.getElementById('loadingSpinner');
             const tableContainer = document.getElementById('tableContainer');
+            const statusMessage = document.getElementById('statusMessage');
+            const refreshButton = document.getElementById('refreshButton');
 
-            // Add back a spinner that matches the new theme
-            loadingSpinner.className = 'spinner'; // Use the spinner style from loading.html
             loadingSpinner.style.display = 'block'; // Show spinner
+            statusMessage.textContent = 'Loading data...';
             tableContainer.innerHTML = ''; // Clear previous content
+            refreshButton.style.display = 'none'; // Hide refresh button initially
 
             try {
-                const sheetData = await fetchSheetData();
+                const response = await fetchSheetData(); // Simulate fetching data
 
-                if (!sheetData || sheetData.length === 0) {
-                    tableContainer.innerHTML = '<p class="text-gray-400 text-center">No data found in the sheet.</p>';
-                    return;
-                }
+                if (response.status === 'ready') {
+                    const sheetData = response.data;
+                    if (!sheetData || sheetData.length === 0) {
+                        statusMessage.textContent = 'No data found in the sheet.';
+                        refreshButton.style.display = 'block'; // Show refresh if no data but ready status
+                        return;
+                    }
 
-                const table = document.createElement('table');
-                table.classList.add('min-w-full');
+                    const table = document.createElement('table');
+                    table.classList.add('min-w-full');
 
-                // Create table header (considering merged cells)
-                const thead = document.createElement('thead');
-                const headerRow1 = document.createElement('tr');
-                const headerRow2 = document.createElement('tr');
+                    // Create table header (considering merged cells)
+                    const thead = document.createElement('thead');
+                    const headerRow1 = document.createElement('tr');
+                    const headerRow2 = document.createElement('tr');
 
-                // Process the first row for merged header
-                const mergedHeaderCell = document.createElement('th');
-                mergedHeaderCell.colSpan = sheetData[0].length; // Span across all columns
-                mergedHeaderCell.textContent = sheetData[0][0];
-                mergedHeaderCell.classList.add('merged-header'); // Custom class for styling
-                headerRow1.appendChild(mergedHeaderCell);
-                thead.appendChild(headerRow1);
+                    // Process the first row for merged header
+                    const mergedHeaderCell = document.createElement('th');
+                    mergedHeaderCell.colSpan = sheetData[0].length; // Span across all columns
+                    mergedHeaderCell.textContent = sheetData[0][0];
+                    mergedHeaderCell.classList.add('merged-header'); // Custom class for styling
+                    headerRow1.appendChild(mergedHeaderCell);
+                    thead.appendChild(headerRow1);
 
-                // Process the second row for actual column headers
-                sheetData[1].forEach(headerText => {
-                    const th = document.createElement('th');
-                    th.textContent = headerText;
-                    headerRow2.appendChild(th);
-                });
-                thead.appendChild(headerRow2);
-                table.appendChild(thead);
-
-                // Create table body
-                const tbody = document.createElement('tbody');
-                // Start from index 2 to skip the two header rows already processed
-                for (let i = 2; i < sheetData.length; i++) {
-                    const rowData = sheetData[i];
-                    const tr = document.createElement('tr');
-
-                    rowData.forEach((cellData, colIndex) => {
-                        const td = document.createElement('td');
-                        td.textContent = cellData;
-
-                        // Apply colors based on data (example: Status column)
-                        if (sheetData[1][colIndex] === 'Status') { // Check if it's the 'Status' column
-                            if (cellData === 'In Stock') {
-                                td.classList.add('status-in-stock');
-                            } else if (cellData === 'Low Stock') {
-                                td.classList.add('status-low-stock');
-                            } else if (cellData === 'Out of Stock') {
-                                td.classList.add('status-out-of-stock');
-                            }
-                        }
-                        tr.appendChild(td);
+                    // Process the second row for actual column headers
+                    sheetData[1].forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow2.appendChild(th);
                     });
-                    tbody.appendChild(tr);
-                }
-                table.appendChild(tbody);
+                    thead.appendChild(headerRow2);
+                    table.appendChild(thead);
 
-                tableContainer.appendChild(table);
+                    // Create table body
+                    const tbody = document.createElement('tbody');
+                    // Start from index 2 to skip the two header rows already processed
+                    for (let i = 2; i < sheetData.length; i++) {
+                        const rowData = sheetData[i];
+                        const tr = document.createElement('tr');
+
+                        rowData.forEach((cellData, colIndex) => {
+                            const td = document.createElement('td');
+                            td.textContent = cellData;
+
+                            // Apply colors based on data (example: Status column)
+                            if (sheetData[1][colIndex] === 'Status') { // Check if it's the 'Status' column
+                                if (cellData === 'In Stock') {
+                                    td.classList.add('status-in-stock');
+                                } else if (cellData === 'Low Stock') {
+                                    td.classList.add('status-low-stock');
+                                } else if (cellData === 'Out of Stock') {
+                                    td.classList.add('status-out-of-stock');
+                                }
+                            }
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    }
+                    table.appendChild(tbody);
+
+                    tableContainer.appendChild(table);
+                    statusMessage.textContent = 'Data loaded successfully!';
+                    refreshButton.style.display = 'none'; // Hide refresh if data loaded
+                    clearInterval(refreshIntervalId); // Stop auto-refresh once data is loaded
+
+                } else { // response.status === 'not_ready'
+                    statusMessage.textContent = response.message || 'Data is not yet available.';
+                    refreshButton.style.display = 'block'; // Show refresh button
+                }
 
             } catch (error) {
                 console.error("Error loading sheet data:", error);
                 showMessage("Failed to load sheet data. Please check your connection or try again later.");
-                tableContainer.innerHTML = '<p class="text-red-500 text-center">Error loading data.</p>';
+                statusMessage.textContent = 'Error loading data.';
+                refreshButton.style.display = 'block'; // Show refresh button on error
             } finally {
                 loadingSpinner.style.display = 'none'; // Hide spinner
             }
         }
+
+        // Event listener for the refresh button
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            loadSheetData(); // Try loading data again
+        });
+
+        // Optional: Auto-refresh after a delay if data is not ready
+        // This simulates polling your backend. Adjust time as needed.
+        // For a more robust solution, you might only start polling if the initial
+        // fetchSheetData returns 'not_ready'.
+        // refreshIntervalId = setInterval(() => {
+        //     console.log("Attempting to auto-refresh data...");
+        //     loadSheetData();
+        // }, 60000); // Every 60 seconds (1 minute)
+
+        // Initial load is handled by window.onload
     </script>
 </body>
 </html>
