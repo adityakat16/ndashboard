@@ -8,5 +8,7 @@ webdriver-manager
 setuptools
 chromedriver-autoinstaller
 psycopg2-binary
-gspread
-oauth2client
+google-auth
+google-api-python-client
+google-auth-httplib2 # Recommended to ensure http client dependency
+google-auth-oauthlib
