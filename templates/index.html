@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Stock Info Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;500&display=swap" rel="stylesheet">
-  <style>
+    <style>
         body {
             margin: 0;
             padding: 0;
@@ -72,18 +72,7 @@
             background-color: #8f94fb;
         }
 
-        .result {
-            margin-top: 25px;
-            font-size: 15px;
-            background: #ffffffde;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-            color: #3b3b3b;
-        }
+        /* The .result block is removed as data will be shown on data.html */
     </style>
 </head>
 <body>
@@ -91,39 +80,86 @@
         <h1 id="greeting">Hello!</h1>
         <div class="timestamp" id="timestamp">--:-- --</div>
 
-        <form action="/get_stock_data" method="POST">
-            <input type="text" name="symbol" placeholder="e.g. TCS, INFY, RELIANCE" required />
+        <form id="stockForm">
+            <!-- Added id to input for easier JavaScript access -->
+            <input type="text" name="symbol" id="symbolInput" placeholder="e.g. TCS, INFY, RELIANCE" required />
             <br>
-            <button type="submit">Get Data</button>
+            <!-- Added id to button for event listener -->
+            <button type="submit" id="getDataButton">Get Data</button>
         </form>
 
-        {% if data %}
-            <div class="result">
-                <pre>{{ data }}</pre>
-            </div>
-        {% endif %}
+        <!-- Removed the {% if data %} block as this page will now redirect
+             and the data will be displayed on data.html -->
     </div>
 
     <script>
-               const now = new Date();
-        const hours = now.getHours();
-        const timestampElem = document.getElementById("timestamp");
-        const greetingElem = document.getElementById("greeting");
+        // Function to update the greeting and timestamp
+        function updateGreetingAndTimestamp() {
+            const now = new Date();
+            const hours = now.getHours();
+            const timestampElem = document.getElementById("timestamp");
+            const greetingElem = document.getElementById("greeting");
 
-        let greeting = "Hello!";
-        if (hours < 12) {
-            greeting = "Good Morning!";
-        } else if (hours < 17) {
-            greeting = "Good Afternoon!";
-        } else {
-            greeting = "Good Evening!";
+            let greeting = "Hello!";
+            if (hours < 12) {
+                greeting = "Good Morning!";
+            } else if (hours < 17) {
+                greeting = "Good Afternoon!";
+            } else {
+                greeting = "Good Evening!";
+            }
+
+            greetingElem.textContent = `Hello, ${greeting}`;
+
+            const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const formattedTime = now.toLocaleTimeString(undefined, options);
+            timestampElem.textContent = formattedTime;
         }
 
-        greetingElem.textContent = `Hello, ${greeting}`;
+        // Update time and greeting initially and then every second
+        updateGreetingAndTimestamp();
+        setInterval(updateGreetingAndTimestamp, 1000);
 
-        const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-        const formattedTime = now.toLocaleTimeString(undefined, options);
-        timestampElem.textContent = formattedTime;
+        // Get references to the form elements
+        const stockForm = document.getElementById('stockForm');
+        const symbolInput = document.getElementById('symbolInput');
+        const getDataButton = document.getElementById('getDataButton');
+
+        // Add event listener to the form's submit event
+        stockForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission (page reload)
+
+            const symbol = symbolInput.value;
+            console.log('User entered symbol:', symbol);
+
+            // Send data to localhost backend using fetch API
+            try {
+                // Ensure this URL matches your Flask route for handling stock data requests
+                const response = await fetch('http://localhost:5000/get_stock_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to send data to backend:', response.status, response.statusText);
+                    // You might want to add a message box here for user feedback
+                } else {
+                    const result = await response.json();
+                    console.log('Backend response:', result);
+                    // Handle successful backend response if needed before redirecting
+                }
+            } catch (error) {
+                console.error('Error sending data to backend:', error);
+                // You might want to add a message box here for user feedback
+            } finally {
+                // IMPORTANT: Redirect to loading.html immediately after attempting to send data
+                // This ensures the user sees the loading page without waiting for the backend response.
+                window.location.href = 'loading.html';
+            }
+        });
     </script>
 </body>
 </html>
