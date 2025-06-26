@@ -143,10 +143,7 @@
                     },
                     body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
                 });
-                setTimeout(() => {
-                    window.location.href = 'loading.html';
-                }, 2000);
-
+                
                 if (!response.ok) {
                     console.error('Failed to send data to Render backend:', response.status, response.statusText);
                     // You might want to add a message box here for user feedback
@@ -157,7 +154,9 @@
             } catch (error) {
                 console.error('Error sending data to Render backend:', error);
                 // You might want to add a message box here for user feedback
-            } 
+            } setTimeout(() => {
+                window.location.href = 'loading.html';
+            }, 2000);
         });
     </script>
 </body>
