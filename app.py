@@ -16,6 +16,34 @@ service = None # Global variable to store the Google Sheets service object
 
 # Define the scopes required for Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+import requests
+
+@app.route('/send_input', methods=['POST'])
+def send_input():
+    try:
+        data = request.get_json()
+        stock_symbol = data.get("stock_symbol")
+        
+        if not stock_symbol:
+            return jsonify(status="error", message="Missing 'stock_symbol' in request."), 400
+
+        # Get the ngrok URL from environment variable
+        ngrok_url = os.environ.get('NGROK_URL')
+        if not ngrok_url:
+            return jsonify(status="error", message="NGROK_URL not set in environment variables."), 500
+
+        # Construct full URL to your local endpoint
+        target_url = f"{ngrok_url}/process_input"
+
+        # Send the data to your local machine
+        response = requests.post(target_url, json={"stock_symbol": stock_symbol}, timeout=15)
+
+        # Forward the response back to the client
+        return jsonify(status="success", message="Forwarded to local machine.", data=response.json())
+
+    except Exception as e:
+        logging.exception("Error sending input to local machine via ngrok:")
+        return jsonify(status="error", message=str(e)), 500
 
 def initialize_google_sheets_service():
     """Initializes the Google Sheets API service using credentials."""
