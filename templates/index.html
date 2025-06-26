@@ -71,8 +71,12 @@
         form button:hover {
             background-color: #8f94fb;
         }
-
-        /* The .result block is removed as data will be shown on data.html */
+        /* Style for clicked state */
+        form button:active,
+        form button.clicked {
+            background-color: #6a5acd; /* A darker shade or distinct color */
+            transform: scale(0.98); /* Slight shrink effect */
+        }
     </style>
 </head>
 <body>
@@ -81,14 +85,11 @@
         <div class="timestamp" id="timestamp">--:-- --</div>
 
         <form id="stockForm">
-            <!-- Added id to input for easier JavaScript access -->
             <input type="text" name="symbol" id="symbolInput" placeholder="e.g. TCS, INFY, RELIANCE" required />
             <br>
-            <!-- Added id to button for event listener -->
             <button type="submit" id="getDataButton">Get Data</button>
         </form>
 
-    
     </div>
 
     <script>
@@ -119,11 +120,10 @@
         updateGreetingAndTimestamp();
         setInterval(updateGreetingAndTimestamp, 1000);
 
-        // Get references to the form elements
+        // *** FIX: Get references to the form elements HERE, before they are used ***
         const stockForm = document.getElementById('stockForm');
         const symbolInput = document.getElementById('symbolInput');
-        const getDataButton = document.getElementById('getDataButton');
-            
+        const getDataButton = document.getElementById('getDataButton'); // Get button reference
 
         // Add event listener to the form's submit event
         stockForm.addEventListener('submit', async (event) => {
@@ -132,35 +132,45 @@
             const symbol = symbolInput.value;
             console.log('User entered symbol:', symbol);
 
-            // Send data to localhost backend using fetch API
-            try {
-                // Ensure this URL matches your Flask route for handling stock data requests
-                const response = await fetch('http://localhost:5000/get_stock_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
-                });
+            // Change button color and disable it immediately on click
+            getDataButton.classList.add('clicked'); // Add a class for styling
+            getDataButton.disabled = true; // Disable to prevent multiple clicks
+            getDataButton.textContent = 'Processing...'; // Optional: change text
+            console.log('Button clicked: Styling and text changed.');
 
+
+            // Send data to Render backend without awaiting its response
+            console.log('Initiating fetch request...');
+            fetch('/get_stock_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symbol: symbol })
+            })
+            .then(response => {
+                console.log('Fetch response received.');
                 if (!response.ok) {
-                    console.error('Failed to send data to backend:', response.status, response.statusText);
-                    // You might want to add a message box here for user feedback
-                } else {
-                    const result = await response.json();
-                    console.log('Backend response:', result);
-                    // Handle successful backend response if needed before redirecting
+                    console.error('Failed to send data to Render backend:', response.status, response.statusText);
                 }
-            } catch (error) {
-                console.error('Error sending data to backend:', error);
-                // You might want to add a message box here for user feedback
-            } finally {
-                // IMPORTANT: Redirect to loading.html immediately after attempting to send data
-                // This ensures the user sees the loading page without waiting for the backend response.
-                setTimeout(() => {
-                    window.location.href = 'loading.html';
-                }, 2000);
-            }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Render Backend response (from forwarding attempt):', result);
+            })
+            .catch(error => {
+                console.error('Error sending data to Render backend:', error);
+            })
+            .finally(() => {
+                console.log('Fetch promise settled (finally block).');
+            });
+
+            // Set a 2-second delay before redirecting
+            console.log('Setting timeout for redirection...');
+            setTimeout(() => {
+                console.log('Timeout finished. Redirecting to loading.html...');
+                window.location.href = 'loading.html';
+            }, 2000); // 2000 milliseconds = 2 seconds
         });
     </script>
 </body>
