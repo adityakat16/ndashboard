@@ -88,6 +88,8 @@
             <button type="submit" id="getDataButton">Get Data</button>
         </form>
 
+        <!-- Removed the {% if data %} block as this page will now redirect
+             and the data will be displayed on data.html -->
     </div>
 
     <script>
@@ -119,43 +121,45 @@
         setInterval(updateGreetingAndTimestamp, 1000);
 
         // Get references to the form elements
-        const stockForm = document.getElementById('stockForm');
-        const symbolInput = document.getElementById('symbolInput');
-        const getDataButton = document.getElementById('getDataButton');
+        getDataButton.classList.add('clicked'); // Add a class for styling
+        getDataButton.disabled = true; // Disable to prevent multiple clicks
+        getDataButton.textContent = 'Processing...';
+            
 
         // Add event listener to the form's submit event
         stockForm.addEventListener('submit', async (event) => {
             event.preventDefault(); // Prevent default form submission (page reload)
-            
+
             const symbol = symbolInput.value;
             console.log('User entered symbol:', symbol);
-            getDataButton.classList.add('clicked'); // Add a class for styling
-            getDataButton.disabled = true; // Disable to prevent multiple clicks
-            getDataButton.textContent = 'Processing...';
-            
-            
-            try {Add commentMore actions
-                // *** CRITICAL CHANGE HERE: Use a relative path to hit your Render backend ***
-                const response = await fetch('/get_stock_data', {
+
+            // Send data to localhost backend using fetch API
+            try {
+                // Ensure this URL matches your Flask route for handling stock data requests
+                const response = await fetch('http://localhost:5000/get_stock_data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
                 });
+
                 if (!response.ok) {
-                    console.error('Failed to send data to Render backend:', response.status, response.statusText);
-                }
-                                    // You might want to add a message box here for user feedbackAdd commentMore actions
+                    console.error('Failed to send data to backend:', response.status, response.statusText);
+                    // You might want to add a message box here for user feedback
                 } else {
                     const result = await response.json();
-                    console.log('Render Backend response (from forwarding attempt):', result);
-                } catch (error) {
-                     console.error('Error sending data to Render backend:', error);Add commentMore actions
+                    console.log('Backend response:', result);
+                    // Handle successful backend response if needed before redirecting
+                }
+            } catch (error) {
+                console.error('Error sending data to backend:', error);
                 // You might want to add a message box here for user feedback
-            } setTimeout(() => {
-                window.location.href = 'loading.html';Add commentMore actions
-            }, 2000);
+            } finally {
+                // IMPORTANT: Redirect to loading.html immediately after attempting to send data
+                // This ensures the user sees the loading page without waiting for the backend response.
+                window.location.href = 'loading.html';
+            }
         });
     </script>
 </body>
