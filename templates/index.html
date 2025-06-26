@@ -158,7 +158,9 @@
             } finally {
                 // IMPORTANT: Redirect to loading.html immediately after attempting to send data
                 // This ensures the user sees the loading page without waiting for the backend response.
-                window.location.href = 'loading.html';
+                setTimeout(() => {
+                    window.location.href = 'loading.html';
+                }, 2000);
             }
         });
     </script>
