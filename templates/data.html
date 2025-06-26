@@ -183,6 +183,28 @@
             background-color: #434c9c;
             transform: translateY(-2px);
         }
+
+        /* New styles for sheet selection buttons */
+        .sheet-select-btn {
+            background-color: #444444;
+            color: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .sheet-select-btn:hover {
+            background-color: #555555;
+            transform: translateY(-2px);
+        }
+        .sheet-select-btn.active-sheet-btn {
+            background-color: #4CAF50; /* Active green color */
+            color: white;
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
     </style>
     <!-- Firebase SDK (Standard for Canvas Apps) -->
     <script type="module">
@@ -220,7 +242,9 @@
                 } else {
                     console.warn('Firebase config not provided. Running without Firebase.');
                 }
-                // Call loadSheetData on initial page load
+                // Call setupSheetSelection and initial load
+                setupSheetSelection();
+                // Trigger initial load for the default sheet (Overall, entire range)
                 loadSheetData();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
@@ -256,6 +280,13 @@
 
     <div class="container">
         <h1>Google Sheet Data</h1>
+        <!-- Sheet Selection Buttons -->
+        <div class="flex justify-center space-x-4 mb-6">
+            <button id="overallBtn" class="sheet-select-btn active-sheet-btn" data-sheet="overall" data-range="A:Z">Overall</button>
+            <button id="annualBtn" class="sheet-select-btn" data-sheet="annual" data-range="A:E">Annual</button>
+            <button id="quarterlyBtn" class="sheet-select-btn" data-sheet="quarterly" data-range="A:E">Quarterly</button>
+        </div>
+
         <div id="loadingSpinner" class="spinner"></div>
         <div id="statusMessage" class="status-message">Loading data...</div>
         <div id="tableContainer">
@@ -267,89 +298,112 @@
     <script>
         let refreshIntervalId; // To store the ID of the auto-refresh interval
 
-        // Function to simulate fetching data from a Google Sheet
-        async function fetchSheetData() {
-            // In a real application, you would use the Google Sheets API here.
-            // This would likely be via an endpoint on your Render app (e.g., /get_sheet_data)
-            // that then reads from your Google Sheet.
+        /**
+         * Sets up event listeners for the sheet selection buttons.
+         */
+        function setupSheetSelection() {
+            const sheetButtons = document.querySelectorAll('.sheet-select-btn');
+            sheetButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    sheetButtons.forEach(btn => btn.classList.remove('active-sheet-btn'));
+                    // Add active class to clicked button
+                    button.classList.add('active-sheet-btn');
 
-            // For demonstration, we'll simulate data that sometimes isn't ready
-            const isDataReady = Math.random() > 0.3; // 70% chance data is ready
-
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    if (isDataReady) {
-                        const data = [
-                            // Row 1: Merged header
-                            ["Product Inventory Overview", "", "", "", ""],
-                            // Row 2: Sub-headers
-                            ["Category", "Item Name", "Quantity", "Unit Price ($)", "Status"],
-                            // Data rows
-                            ["Electronics", "Laptop Pro X", 5, 1200, "In Stock"],
-                            ["Electronics", "Wireless Mouse", 15, 25, "In Stock"],
-                            ["Electronics", "Mechanical Keyboard", 10, 75, "Low Stock"],
-                            ["Books", "Sci-Fi Epic Vol. 1", 20, 15, "In Stock"],
-                            ["Books", "Fantasy Saga Collection", 8, 40, "Low Stock"],
-                            ["Home Goods", "Smart Coffee Maker", 3, 80, "Out of Stock"],
-                            ["Home Goods", "High-Power Blender", 7, 60, "In Stock"],
-                            ["Apparel", "Sport T-Shirt (M)", 25, 20, "In Stock"],
-                            ["Apparel", "Winter Jacket (L)", 2, 150, "Low Stock"],
-                            ["Groceries", "Organic Apples (kg)", 50, 3, "In Stock"]
-                        ];
-                        resolve({ status: 'ready', data: data });
-                    } else {
-                        resolve({ status: 'not_ready', message: 'Data is still being processed.' });
-                    }
-                }, 1500); // Simulate network delay
+                    const sheetName = button.dataset.sheet;
+                    const rangeName = button.dataset.range; // Get the range specified on the button
+                    loadSheetData(sheetName, rangeName);
+                });
             });
         }
 
-        // Function to render the table
-        async function loadSheetData() {
+        /**
+         * Fetches sheet data from the backend API.
+         * @param {string} sheetName - The name of the worksheet to fetch data from.
+         * @param {string} dataRange - The range in A1 notation (e.g., 'A:Z', 'A1:E10').
+         * @returns {Promise<Object>} A promise that resolves to an object containing status and data.
+         */
+        async function fetchSheetData(sheetName, dataRange) {
+            try {
+                // Construct the fetch URL dynamically based on sheetName and dataRange
+                const url = `/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
+                console.log('Fetching data from:', url);
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    return { status: 'ready', data: data.values }; // Assuming your backend returns { values: [...] }
+                } else {
+                    return { status: 'error', message: data.message || 'Failed to fetch data from backend.' };
+                }
+            } catch (error) {
+                console.error('Error fetching sheet data:', error);
+                return { status: 'error', message: 'Network error or server unavailable.' };
+            }
+        }
+
+        /**
+         * Renders the table from the fetched sheet data.
+         * @param {string} [sheetName='overall'] - The name of the worksheet to load.
+         * @param {string} [dataRange='A:Z'] - The range in A1 notation for the data.
+         */
+        async function loadSheetData(sheetName = 'overall', dataRange = 'A:Z') {
             const loadingSpinner = document.getElementById('loadingSpinner');
             const tableContainer = document.getElementById('tableContainer');
             const statusMessage = document.getElementById('statusMessage');
             const refreshButton = document.getElementById('refreshButton');
 
             loadingSpinner.style.display = 'block'; // Show spinner
-            statusMessage.textContent = 'Loading data...';
+            statusMessage.textContent = `Loading data from ${sheetName} sheet...`;
             tableContainer.innerHTML = ''; // Clear previous content
             refreshButton.style.display = 'none'; // Hide refresh button initially
+            clearInterval(refreshIntervalId); // Clear any existing auto-refresh interval
 
             try {
-                const response = await fetchSheetData(); // Simulate fetching data
+                const response = await fetchSheetData(sheetName, dataRange);
 
                 if (response.status === 'ready') {
                     const sheetData = response.data;
-                    if (!sheetData || sheetData.length === 0) {
-                        statusMessage.textContent = 'No data found in the sheet.';
-                        refreshButton.style.display = 'block'; // Show refresh if no data but ready status
+                    if (!sheetData || sheetData.length < 2) { // Need at least two rows for merged header and column headers
+                        statusMessage.textContent = `No data or insufficient data found in the ${sheetName} sheet.`;
+                        refreshButton.style.display = 'block';
                         return;
                     }
 
                     const table = document.createElement('table');
                     table.classList.add('min-w-full');
 
-                    // Create table header (considering merged cells)
                     const thead = document.createElement('thead');
                     const headerRow1 = document.createElement('tr');
                     const headerRow2 = document.createElement('tr');
 
                     // Process the first row for merged header
                     const mergedHeaderCell = document.createElement('th');
-                    mergedHeaderCell.colSpan = sheetData[0].length; // Span across all columns
-                    mergedHeaderCell.textContent = sheetData[0][0];
-                    mergedHeaderCell.classList.add('merged-header'); // Custom class for styling
+                    mergedHeaderCell.colSpan = sheetData[0].length > 0 ? sheetData[0].length : 5; // Use actual length or default
+                    mergedHeaderCell.textContent = sheetData[0][0] || 'Inventory Data'; // Use first cell or default text
+                    mergedHeaderCell.classList.add('merged-header');
                     headerRow1.appendChild(mergedHeaderCell);
                     thead.appendChild(headerRow1);
 
                     // Process the second row for actual column headers
-                    sheetData[1].forEach(headerText => {
-                        const th = document.createElement('th');
-                        th.textContent = headerText;
-                        headerRow2.appendChild(th);
-                    });
-                    thead.appendChild(headerRow2);
+                    if (sheetData[1] && Array.isArray(sheetData[1])) {
+                        sheetData[1].forEach(headerText => {
+                            const th = document.createElement('th');
+                            th.textContent = headerText;
+                            headerRow2.appendChild(th);
+                        });
+                        thead.appendChild(headerRow2);
+                    } else {
+                        // Fallback if the second header row is missing or malformed
+                        console.warn("Second header row (column headers) is missing or malformed. Using default columns.");
+                        ['Column 1', 'Column 2', 'Column 3', 'Column 4', 'Column 5'].forEach(headerText => {
+                            const th = document.createElement('th');
+                            th.textContent = headerText;
+                            headerRow2.appendChild(th);
+                        });
+                        thead.appendChild(headerRow2);
+                    }
+
                     table.appendChild(thead);
 
                     // Create table body
@@ -363,8 +417,8 @@
                             const td = document.createElement('td');
                             td.textContent = cellData;
 
-                            // Apply colors based on data (example: Status column)
-                            if (sheetData[1][colIndex] === 'Status') { // Check if it's the 'Status' column
+                            // Apply colors based on data (example: assuming 'Status' column exists and is consistent)
+                            if (sheetData[1] && sheetData[1][colIndex] === 'Status') {
                                 if (cellData === 'In Stock') {
                                     td.classList.add('status-in-stock');
                                 } else if (cellData === 'Low Stock') {
@@ -380,12 +434,12 @@
                     table.appendChild(tbody);
 
                     tableContainer.appendChild(table);
-                    statusMessage.textContent = 'Data loaded successfully!';
+                    statusMessage.textContent = `Data loaded successfully from ${sheetName} sheet!`;
                     refreshButton.style.display = 'none'; // Hide refresh if data loaded
-                    clearInterval(refreshIntervalId); // Stop auto-refresh once data is loaded
 
-                } else { // response.status === 'not_ready'
+                } else { // response.status === 'error' or 'not_ready'
                     statusMessage.textContent = response.message || 'Data is not yet available.';
+                    showMessage(response.message || 'Failed to retrieve data from the server.');
                     refreshButton.style.display = 'block'; // Show refresh button
                 }
 
@@ -401,19 +455,14 @@
 
         // Event listener for the refresh button
         document.getElementById('refreshButton').addEventListener('click', () => {
-            loadSheetData(); // Try loading data again
+            // Get currently active sheet and range from the active button
+            const activeBtn = document.querySelector('.sheet-select-btn.active-sheet-btn');
+            const currentSheetName = activeBtn ? activeBtn.dataset.sheet : 'overall';
+            const currentRangeName = activeBtn ? activeBtn.dataset.range : 'A:Z'; // Default to A:Z if no active button
+            loadSheetData(currentSheetName, currentRangeName); // Try loading data again for the current selection
         });
 
-        // Optional: Auto-refresh after a delay if data is not ready
-        // This simulates polling your backend. Adjust time as needed.
-        // For a more robust solution, you might only start polling if the initial
-        // fetchSheetData returns 'not_ready'.
-        // refreshIntervalId = setInterval(() => {
-        //     console.log("Attempting to auto-refresh data...");
-        //     loadSheetData();
-        // }, 60000); // Every 60 seconds (1 minute)
-
-        // Initial load is handled by window.onload
+        // Initial load is handled by window.onload, which calls setupSheetSelection and then loadSheetData()
     </script>
 </body>
 </html>
