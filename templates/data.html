@@ -484,8 +484,8 @@
             try {
                 const [overallResponse, annualResponse, quarterlyResponse] = await Promise.all([
                     fetchSheetData('overall', 'A:Z'), // Fetch entire 'overall' sheet
-                    fetchSheetData('annual', 'A:Z'),   // Fetch entire 'annual' sheet, all columns
-                    fetchSheetData('quarterly', 'A:Z') // Fetch entire 'quarterly' sheet, all columns
+                    fetchSheetData('Annual Data', 'A:Z'),   // Fetch entire 'annual' sheet, all columns
+                    fetchSheetData('Quaterly Data', 'A:Z') // Fetch entire 'quarterly' sheet, all columns
                 ]);
 
                 // Render Overall data
