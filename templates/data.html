@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheet Data Table</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            color: #f0f0f0; /* Light text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #2c2c2c; /* Darker panel background */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 95%; /* Adjust for better responsiveness */
+            width: 100%;
+            overflow-x: auto; /* For responsive tables */
+            margin-top: 20px;
+        }
+        h1 {
+            color: #4CAF50; /* Green from your theme */
+            margin-bottom: 25px;
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #3a3a3a; /* Darker border for cells */
+            color: #f0f0f0; /* Light text for table content */
+        }
+        th {
+            background-color: #4CAF50; /* Green header from your theme */
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            border: 1px solid #4CAF50; /* Matching border */
+        }
+        tr:nth-child(even) td {
+            background-color: #333333; /* Slightly lighter dark for even rows */
+        }
+        tr:nth-child(odd) td {
+            background-color: #2e2e2e; /* Slightly darker dark for odd rows */
+        }
+        tr:hover td {
+            background-color: #3b3b3b; /* Darker hover effect */
+            transition: background-color 0.2s ease;
+        }
+        td.merged-header {
+            background-color: #39633c; /* A darker green for merged headers */
+            color: white;
+            font-weight: 700;
+            text-align: center;
+            border: none; /* No border for merged header */
+        }
+        /* Specific color for status cells */
+        td.status-in-stock {
+            background-color: #2e5c32; /* Darker green */
+            color: #d4edda; /* Lighter green text */
+        }
+        td.status-low-stock {
+            background-color: #6e6424; /* Darker yellow/olive */
+            color: #fff3cd; /* Lighter yellow text */
+        }
+        td.status-out-of-stock {
+            background-color: #6e2e32; /* Darker red */
+            color: #f8d7da; /* Lighter red text */
+        }
+        td.status-in-stock, td.status-low-stock, td.status-out-of-stock {
+            font-weight: 600;
+            border-radius: 5px;
+            padding: 8px 12px;
+            text-align: center;
+        }
+
+        .message-box {
+            background-color: #3a3a3a;
+            border: 1px solid #555;
+            color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+        .message-box button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .message-box button:hover {
+            background-color: #45a049;
+        }
+
+        /* Back button styling */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #444444;
+            color: #f0f0f0;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .back-button:hover {
+            background-color: #555555;
+            transform: translateY(-2px);
+        }
+        .back-button i {
+            margin-right: 8px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            th, td {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+    <!-- Firebase SDK (Standard for Canvas Apps) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let app;
+        let db;
+        let auth;
+        let userId;
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase on window load
+        window.onload = async () => {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log('Signed in with custom token.');
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log('Signed in anonymously.');
+                    }
+                    userId = auth.currentUser?.uid || crypto.randomUUID();
+                    console.log('Firebase initialized. User ID:', userId);
+                } else {
+                    console.warn('Firebase config not provided. Running without Firebase.');
+                }
+                loadSheetData(); // Load data after Firebase is potentially initialized
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showMessage('Error initializing application. Please try again.');
+                // Even if Firebase fails, try to load data
+                loadSheetData();
+            }
+        };
+
+        function showMessage(message) {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            messageText.textContent = message;
+            messageBox.style.display = 'block';
+        }
+
+        function closeMessage() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+
+        window.closeMessage = closeMessage; // Make it globally accessible for the button
+    </script>
+</head>
+<body>
+    <div class="message-box" id="messageBox">
+        <p id="messageText"></p>
+        <button onclick="closeMessage()">OK</button>
+    </div>
+
+    <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <div class="container">
+        <h1>Google Sheet Data</h1>
+        <div id="loadingSpinner" class="loading-spinner"></div>
+        <div id="tableContainer">
+            <!-- Table will be loaded here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Simulate fetching data from a Google Sheet
+        async function fetchSheetData() {
+            // In a real application, you would use the Google Sheets API here.
+            // This is a placeholder for demonstration purposes.
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const data = [
+                        // Row 1: Merged header
+                        ["Product Inventory Overview", "", "", "", ""],
+                        // Row 2: Sub-headers
+                        ["Category", "Item Name", "Quantity", "Unit Price ($)", "Status"],
+                        // Data rows
+                        ["Electronics", "Laptop Pro X", 5, 1200, "In Stock"],
+                        ["Electronics", "Wireless Mouse", 15, 25, "In Stock"],
+                        ["Electronics", "Mechanical Keyboard", 10, 75, "Low Stock"],
+                        ["Books", "Sci-Fi Epic Vol. 1", 20, 15, "In Stock"],
+                        ["Books", "Fantasy Saga Collection", 8, 40, "Low Stock"],
+                        ["Home Goods", "Smart Coffee Maker", 3, 80, "Out of Stock"],
+                        ["Home Goods", "High-Power Blender", 7, 60, "In Stock"],
+                        ["Apparel", "Sport T-Shirt (M)", 25, 20, "In Stock"],
+                        ["Apparel", "Winter Jacket (L)", 2, 150, "Low Stock"],
+                        ["Groceries", "Organic Apples (kg)", 50, 3, "In Stock"]
+                    ];
+                    resolve(data);
+                }, 1500); // Simulate network delay
+            });
+        }
+
+        // Function to render the table
+        async function loadSheetData() {
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const tableContainer = document.getElementById('tableContainer');
+
+            // Add back a spinner that matches the new theme
+            loadingSpinner.className = 'spinner'; // Use the spinner style from loading.html
+            loadingSpinner.style.display = 'block'; // Show spinner
+            tableContainer.innerHTML = ''; // Clear previous content
+
+            try {
+                const sheetData = await fetchSheetData();
+
+                if (!sheetData || sheetData.length === 0) {
+                    tableContainer.innerHTML = '<p class="text-gray-400 text-center">No data found in the sheet.</p>';
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.classList.add('min-w-full');
+
+                // Create table header (considering merged cells)
+                const thead = document.createElement('thead');
+                const headerRow1 = document.createElement('tr');
+                const headerRow2 = document.createElement('tr');
+
+                // Process the first row for merged header
+                const mergedHeaderCell = document.createElement('th');
+                mergedHeaderCell.colSpan = sheetData[0].length; // Span across all columns
+                mergedHeaderCell.textContent = sheetData[0][0];
+                mergedHeaderCell.classList.add('merged-header'); // Custom class for styling
+                headerRow1.appendChild(mergedHeaderCell);
+                thead.appendChild(headerRow1);
+
+                // Process the second row for actual column headers
+                sheetData[1].forEach(headerText => {
+                    const th = document.createElement('th');
+                    th.textContent = headerText;
+                    headerRow2.appendChild(th);
+                });
+                thead.appendChild(headerRow2);
+                table.appendChild(thead);
+
+                // Create table body
+                const tbody = document.createElement('tbody');
+                // Start from index 2 to skip the two header rows already processed
+                for (let i = 2; i < sheetData.length; i++) {
+                    const rowData = sheetData[i];
+                    const tr = document.createElement('tr');
+
+                    rowData.forEach((cellData, colIndex) => {
+                        const td = document.createElement('td');
+                        td.textContent = cellData;
+
+                        // Apply colors based on data (example: Status column)
+                        if (sheetData[1][colIndex] === 'Status') { // Check if it's the 'Status' column
+                            if (cellData === 'In Stock') {
+                                td.classList.add('status-in-stock');
+                            } else if (cellData === 'Low Stock') {
+                                td.classList.add('status-low-stock');
+                            } else if (cellData === 'Out of Stock') {
+                                td.classList.add('status-out-of-stock');
+                            }
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+
+                tableContainer.appendChild(table);
+
+            } catch (error) {
+                console.error("Error loading sheet data:", error);
+                showMessage("Failed to load sheet data. Please check your connection or try again later.");
+                tableContainer.innerHTML = '<p class="text-red-500 text-center">Error loading data.</p>';
+            } finally {
+                loadingSpinner.style.display = 'none'; // Hide spinner
+            }
+        }
+    </script>
+</body>
+</html>
