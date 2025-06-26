@@ -19,21 +19,55 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        .container {
+        .main-content-wrapper {
+            display: flex; /* Use flexbox for the main two-column layout */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 20px; /* Space between columns */
+            width: 100%;
+            max-width: 1200px; /* Max width for the entire dashboard */
+            margin-top: 20px;
+            justify-content: center; /* Center content horizontally */
+        }
+        .left-panel {
+            flex: 2; /* Takes more space on wider screens */
+            min-width: 400px; /* Minimum width for the left panel */
             background-color: #2c2c2c; /* Darker panel background */
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            max-width: 95%; /* Adjust for better responsiveness */
-            width: 100%;
-            overflow-x: auto; /* For responsive tables */
-            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
         }
+        .right-panel {
+            flex: 1; /* Takes less space than left */
+            min-width: 300px; /* Minimum width for the right panel */
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between annual and quarterly sections */
+        }
+        .right-panel > div {
+            background-color: #2c2c2c; /* Darker panel background for sub-sections */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            flex: 1; /* Each takes equal vertical space */
+            display: flex;
+            flex-direction: column;
+        }
+
         h1 {
             color: #4CAF50; /* Green from your theme */
             margin-bottom: 25px;
             font-size: 2.25rem;
             font-weight: 700;
+            text-align: center;
+            width: 100%; /* Ensure h1 spans full width */
+        }
+        h2 {
+            color: #66bb6a; /* Lighter green for sub-headers */
+            margin-bottom: 15px;
+            font-size: 1.75rem;
+            font-weight: 600;
             text-align: center;
         }
         table {
@@ -44,6 +78,7 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            min-width: fit-content; /* Ensure table doesn't shrink too much */
         }
         th, td {
             padding: 12px 15px;
@@ -109,6 +144,7 @@
             z-index: 1000;
             display: none;
             text-align: center;
+            min-width: 300px;
         }
         .message-box button {
             background-color: #4CAF50;
@@ -136,6 +172,7 @@
             font-weight: bold;
             transition: background-color 0.3s ease, transform 0.2s ease;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            align-self: flex-start; /* Align to the left of the body flex container */
         }
         .back-button:hover {
             background-color: #555555;
@@ -174,36 +211,26 @@
             font-weight: 600;
             transition: background-color 0.3s ease, transform 0.2s ease;
             cursor: pointer;
-            display: inline-block;
+            display: block; /* Make it a block element for centering */
+            margin: 20px auto 0; /* Center horizontally with margin-top */
             border: none;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            margin-top: 20px;
         }
         .refresh-button:hover {
             background-color: #434c9c;
             transform: translateY(-2px);
         }
 
-        /* New styles for sheet selection buttons */
-        .sheet-select-btn {
-            background-color: #444444;
-            color: #f0f0f0;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .sheet-select-btn:hover {
-            background-color: #555555;
-            transform: translateY(-2px);
-        }
-        .sheet-select-btn.active-sheet-btn {
-            background-color: #4CAF50; /* Active green color */
-            color: white;
-            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            .main-content-wrapper {
+                flex-direction: column; /* Stack columns vertically on smaller screens */
+                align-items: center;
+            }
+            .left-panel, .right-panel, .right-panel > div {
+                width: 100%;
+                min-width: unset; /* Remove min-width on small screens */
+            }
         }
     </style>
     <!-- Firebase SDK (Standard for Canvas Apps) -->
@@ -242,15 +269,13 @@
                 } else {
                     console.warn('Firebase config not provided. Running without Firebase.');
                 }
-                // Call setupSheetSelection and initial load
-                setupSheetSelection();
-                // Trigger initial load for the default sheet (Overall, entire range)
-                loadSheetData();
+                // Load data for all sheets on initial page load
+                loadAllSheetData();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 showMessage('Error initializing application. Please try again.');
                 // Even if Firebase fails, try to load data
-                loadSheetData();
+                loadAllSheetData();
             }
         };
 
@@ -278,45 +303,46 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <div class="container">
-        <h1>Google Sheet Data</h1>
-        <!-- Sheet Selection Buttons -->
-        <div class="flex justify-center space-x-4 mb-6">
-            <button id="overallBtn" class="sheet-select-btn active-sheet-btn" data-sheet="overall" data-range="A:Z">Overall</button>
-            <button id="annualBtn" class="sheet-select-btn" data-sheet="annual" data-range="A:E">Annual</button>
-            <button id="quarterlyBtn" class="sheet-select-btn" data-sheet="quarterly" data-range="A:E">Quarterly</button>
+    <h1>KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
+
+    <div class="main-content-wrapper">
+        <!-- Left Panel: Overall Worksheet Data -->
+        <div class="left-panel">
+            <h2>Overall Data</h2>
+            <div id="overallLoadingSpinner" class="spinner"></div>
+            <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
+            <div id="overallTableContainer" class="flex-grow overflow-x-auto">
+                <!-- Overall table will be loaded here by JavaScript -->
+            </div>
         </div>
 
-        <div id="loadingSpinner" class="spinner"></div>
-        <div id="statusMessage" class="status-message">Loading data...</div>
-        <div id="tableContainer">
-            <!-- Table will be loaded here by JavaScript -->
+        <!-- Right Panel: Annual and Quarterly Worksheets -->
+        <div class="right-panel">
+            <!-- Annual Statistics Section -->
+            <div>
+                <h2>Annual Statistics</h2>
+                <div id="annualLoadingSpinner" class="spinner"></div>
+                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
+                <div id="annualTableContainer" class="flex-grow overflow-x-auto">
+                    <!-- Annual table will be loaded here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Quarterly Statistics Section -->
+            <div>
+                <h2>Quarterly Statistics</h2>
+                <div id="quarterlyLoadingSpinner" class="spinner"></div>
+                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
+                <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto">
+                    <!-- Quarterly table will be loaded here by JavaScript -->
+                </div>
+            </div>
         </div>
-        <button id="refreshButton" class="refresh-button">Refresh Data</button>
     </div>
 
+    <button id="refreshAllButton" class="refresh-button">Refresh All Data</button>
+
     <script>
-        let refreshIntervalId; // To store the ID of the auto-refresh interval
-
-        /**
-         * Sets up event listeners for the sheet selection buttons.
-         */
-        function setupSheetSelection() {
-            const sheetButtons = document.querySelectorAll('.sheet-select-btn');
-            sheetButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons
-                    sheetButtons.forEach(btn => btn.classList.remove('active-sheet-btn'));
-                    // Add active class to clicked button
-                    button.classList.add('active-sheet-btn');
-
-                    const sheetName = button.dataset.sheet;
-                    const rangeName = button.dataset.range; // Get the range specified on the button
-                    loadSheetData(sheetName, rangeName);
-                });
-            });
-        }
-
         /**
          * Fetches sheet data from the backend API.
          * @param {string} sheetName - The name of the worksheet to fetch data from.
@@ -325,144 +351,183 @@
          */
         async function fetchSheetData(sheetName, dataRange) {
             try {
-                // Construct the fetch URL dynamically based on sheetName and dataRange
                 const url = `/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
-                console.log('Fetching data from:', url);
+                console.log(`Fetching data from: ${url}`);
                 const response = await fetch(url);
                 const data = await response.json();
 
                 if (response.ok) {
-                    return { status: 'ready', data: data.values }; // Assuming your backend returns { values: [...] }
+                    return { status: 'ready', data: data.values, sheetName: sheetName };
                 } else {
-                    return { status: 'error', message: data.message || 'Failed to fetch data from backend.' };
+                    return { status: 'error', message: data.message || `Failed to fetch data from backend for ${sheetName}.`, sheetName: sheetName };
                 }
             } catch (error) {
-                console.error('Error fetching sheet data:', error);
-                return { status: 'error', message: 'Network error or server unavailable.' };
+                console.error(`Error fetching sheet data for ${sheetName}:`, error);
+                return { status: 'error', message: `Network error or server unavailable for ${sheetName}.`, sheetName: sheetName };
             }
         }
 
         /**
-         * Renders the table from the fetched sheet data.
-         * @param {string} [sheetName='overall'] - The name of the worksheet to load.
-         * @param {string} [dataRange='A:Z'] - The range in A1 notation for the data.
+         * Renders a single table into a specified container.
+         * @param {string} containerId - The ID of the div where the table should be rendered.
+         * @param {Array<Array<string>>} sheetData - The 2D array of data from the sheet.
+         * @param {string} sheetTitle - The title for the table (e.g., "Overall Data").
          */
-        async function loadSheetData(sheetName = 'overall', dataRange = 'A:Z') {
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const tableContainer = document.getElementById('tableContainer');
-            const statusMessage = document.getElementById('statusMessage');
-            const refreshButton = document.getElementById('refreshButton');
+        function renderTable(containerId, sheetData, sheetTitle) {
+            const tableContainer = document.getElementById(containerId);
+            const statusMessage = document.getElementById(containerId.replace('TableContainer', 'StatusMessage'));
+            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner'));
 
-            loadingSpinner.style.display = 'block'; // Show spinner
-            statusMessage.textContent = `Loading data from ${sheetName} sheet...`;
-            tableContainer.innerHTML = ''; // Clear previous content
-            refreshButton.style.display = 'none'; // Hide refresh button initially
-            clearInterval(refreshIntervalId); // Clear any existing auto-refresh interval
+            // Clear previous content
+            tableContainer.innerHTML = '';
+            loadingSpinner.style.display = 'none'; // Hide spinner
+            statusMessage.textContent = ''; // Clear status message
+
+            if (!sheetData || sheetData.length === 0) {
+                statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.classList.add('min-w-full');
+
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Determine if the first row is a merged header or part of the actual headers
+            let dataStartIndex = 0;
+            if (sheetData[0] && sheetData[0].length === 1 && sheetData[0][0]) {
+                // If the first row has only one non-empty cell, treat it as a merged header
+                const mergedHeaderCell = document.createElement('th');
+                // Set colSpan dynamically based on the actual number of columns in the *first data row*
+                // or a reasonable fallback if data is sparse
+                mergedHeaderCell.colSpan = sheetData[dataStartIndex + 1] ? sheetData[dataStartIndex + 1].length : sheetData[0].length;
+                mergedHeaderCell.textContent = sheetData[0][0];
+                mergedHeaderCell.classList.add('merged-header');
+                const headerRow1 = document.createElement('tr');
+                headerRow1.appendChild(mergedHeaderCell);
+                thead.appendChild(headerRow1);
+                dataStartIndex = 1; // Start data from the next row
+            }
+
+            // Process the actual column headers (the row after the potential merged header or the first row)
+            if (sheetData[dataStartIndex] && Array.isArray(sheetData[dataStartIndex])) {
+                const headerRow = document.createElement('tr');
+                sheetData[dataStartIndex].forEach(headerText => {
+                    const th = document.createElement('th');
+                    th.textContent = headerText;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                dataStartIndex++; // Move past the column headers
+            } else {
+                console.warn(`No column headers found for ${sheetTitle}.`);
+            }
+
+            table.appendChild(thead);
+
+            // Create table body from remaining data rows
+            for (let i = dataStartIndex; i < sheetData.length; i++) {
+                const rowData = sheetData[i];
+                const tr = document.createElement('tr');
+
+                // Ensure rowData is an array to prevent errors if a row is empty/malformed
+                if (!Array.isArray(rowData)) {
+                    console.warn(`Skipping malformed row in ${sheetTitle}:`, rowData);
+                    continue;
+                }
+
+                rowData.forEach((cellData, colIndex) => {
+                    const td = document.createElement('td');
+                    td.textContent = cellData || ''; // Handle potential undefined/null cell data
+
+                    // Apply colors based on 'Status' column if it exists and is relevant
+                    // This assumes the header for 'Status' exists in the header row
+                    let statusColIndex = -1;
+                    if (sheetData[dataStartIndex -1] && Array.isArray(sheetData[dataStartIndex - 1])) {
+                        statusColIndex = sheetData[dataStartIndex - 1].indexOf('Status');
+                    }
+
+                    if (statusColIndex !== -1 && colIndex === statusColIndex) {
+                        if (cellData === 'In Stock') {
+                            td.classList.add('status-in-stock');
+                        } else if (cellData === 'Low Stock') {
+                            td.classList.add('status-low-stock');
+                        } else if (cellData === 'Out of Stock') {
+                            td.classList.add('status-out-of-stock');
+                        }
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+            statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
+        }
+
+        /**
+         * Loads data from all specified sheets concurrently and renders them.
+         */
+        async function loadAllSheetData() {
+            // Show spinners and update status messages for all panels
+            document.getElementById('overallLoadingSpinner').style.display = 'block';
+            document.getElementById('annualLoadingSpinner').style.display = 'block';
+            document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
+
+            document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...';
+            document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...';
+            document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...';
+
+            document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
             try {
-                const response = await fetchSheetData(sheetName, dataRange);
+                const [overallResponse, annualResponse, quarterlyResponse] = await Promise.all([
+                    fetchSheetData('overall', 'A:Z'), // Fetch entire 'overall' sheet
+                    fetchSheetData('annual', 'A:Z'),   // Fetch entire 'annual' sheet, all columns
+                    fetchSheetData('quarterly', 'A:Z') // Fetch entire 'quarterly' sheet, all columns
+                ]);
 
-                if (response.status === 'ready') {
-                    const sheetData = response.data;
-                    if (!sheetData || sheetData.length < 2) { // Need at least two rows for merged header and column headers
-                        statusMessage.textContent = `No data or insufficient data found in the ${sheetName} sheet.`;
-                        refreshButton.style.display = 'block';
-                        return;
-                    }
+                // Render Overall data
+                if (overallResponse.status === 'ready') {
+                    renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
+                } else {
+                    document.getElementById('overallStatusMessage').textContent = overallResponse.message;
+                    showMessage(overallResponse.message);
+                }
 
-                    const table = document.createElement('table');
-                    table.classList.add('min-w-full');
+                // Render Annual data
+                if (annualResponse.status === 'ready') {
+                    renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
+                } else {
+                    document.getElementById('annualStatusMessage').textContent = annualResponse.message;
+                    showMessage(annualResponse.message);
+                }
 
-                    const thead = document.createElement('thead');
-                    const headerRow1 = document.createElement('tr');
-                    const headerRow2 = document.createElement('tr');
-
-                    // Process the first row for merged header
-                    const mergedHeaderCell = document.createElement('th');
-                    mergedHeaderCell.colSpan = sheetData[0].length > 0 ? sheetData[0].length : 5; // Use actual length or default
-                    mergedHeaderCell.textContent = sheetData[0][0] || 'Inventory Data'; // Use first cell or default text
-                    mergedHeaderCell.classList.add('merged-header');
-                    headerRow1.appendChild(mergedHeaderCell);
-                    thead.appendChild(headerRow1);
-
-                    // Process the second row for actual column headers
-                    if (sheetData[1] && Array.isArray(sheetData[1])) {
-                        sheetData[1].forEach(headerText => {
-                            const th = document.createElement('th');
-                            th.textContent = headerText;
-                            headerRow2.appendChild(th);
-                        });
-                        thead.appendChild(headerRow2);
-                    } else {
-                        // Fallback if the second header row is missing or malformed
-                        console.warn("Second header row (column headers) is missing or malformed. Using default columns.");
-                        ['Column 1', 'Column 2', 'Column 3', 'Column 4', 'Column 5'].forEach(headerText => {
-                            const th = document.createElement('th');
-                            th.textContent = headerText;
-                            headerRow2.appendChild(th);
-                        });
-                        thead.appendChild(headerRow2);
-                    }
-
-                    table.appendChild(thead);
-
-                    // Create table body
-                    const tbody = document.createElement('tbody');
-                    // Start from index 2 to skip the two header rows already processed
-                    for (let i = 2; i < sheetData.length; i++) {
-                        const rowData = sheetData[i];
-                        const tr = document.createElement('tr');
-
-                        rowData.forEach((cellData, colIndex) => {
-                            const td = document.createElement('td');
-                            td.textContent = cellData;
-
-                            // Apply colors based on data (example: assuming 'Status' column exists and is consistent)
-                            if (sheetData[1] && sheetData[1][colIndex] === 'Status') {
-                                if (cellData === 'In Stock') {
-                                    td.classList.add('status-in-stock');
-                                } else if (cellData === 'Low Stock') {
-                                    td.classList.add('status-low-stock');
-                                } else if (cellData === 'Out of Stock') {
-                                    td.classList.add('status-out-of-stock');
-                                }
-                            }
-                            tr.appendChild(td);
-                        });
-                        tbody.appendChild(tr);
-                    }
-                    table.appendChild(tbody);
-
-                    tableContainer.appendChild(table);
-                    statusMessage.textContent = `Data loaded successfully from ${sheetName} sheet!`;
-                    refreshButton.style.display = 'none'; // Hide refresh if data loaded
-
-                } else { // response.status === 'error' or 'not_ready'
-                    statusMessage.textContent = response.message || 'Data is not yet available.';
-                    showMessage(response.message || 'Failed to retrieve data from the server.');
-                    refreshButton.style.display = 'block'; // Show refresh button
+                // Render Quarterly data
+                if (quarterlyResponse.status === 'ready') {
+                    renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
+                } else {
+                    document.getElementById('quarterlyStatusMessage').textContent = quarterlyResponse.message;
+                    showMessage(quarterlyResponse.message);
                 }
 
             } catch (error) {
-                console.error("Error loading sheet data:", error);
-                showMessage("Failed to load sheet data. Please check your connection or try again later.");
-                statusMessage.textContent = 'Error loading data.';
-                refreshButton.style.display = 'block'; // Show refresh button on error
+                console.error("Error loading all sheet data:", error);
+                showMessage("Failed to load some or all sheet data. Please check your connection or try again.");
             } finally {
-                loadingSpinner.style.display = 'none'; // Hide spinner
+                // Hide all spinners regardless of success/failure
+                document.getElementById('overallLoadingSpinner').style.display = 'none';
+                document.getElementById('annualLoadingSpinner').style.display = 'none';
+                document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
+                document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
             }
         }
 
-        // Event listener for the refresh button
-        document.getElementById('refreshButton').addEventListener('click', () => {
-            // Get currently active sheet and range from the active button
-            const activeBtn = document.querySelector('.sheet-select-btn.active-sheet-btn');
-            const currentSheetName = activeBtn ? activeBtn.dataset.sheet : 'overall';
-            const currentRangeName = activeBtn ? activeBtn.dataset.range : 'A:Z'; // Default to A:Z if no active button
-            loadSheetData(currentSheetName, currentRangeName); // Try loading data again for the current selection
-        });
+        // Event listener for the refresh all data button
+        document.getElementById('refreshAllButton').addEventListener('click', loadAllSheetData);
 
-        // Initial load is handled by window.onload, which calls setupSheetSelection and then loadSheetData()
+        // Initial load is handled by window.onload
     </script>
 </body>
 </html>
