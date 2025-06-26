@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory # Import send_from_directory
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
@@ -12,21 +12,10 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # --- Google Sheets API Configuration ---
-# IMPORTANT: DO NOT hardcode your service account credentials here.
-# Use environment variables, especially in production environments like Render.
-# The `__firebase_config` variable from Canvas runtime provides your Firebase
-# (and implicitly GCP) credentials. If using a separate service account for
-# Google Sheets API that is NOT tied to Firebase, ensure its JSON key is
-# loaded securely via an environment variable (e.g., GOOGLE_SHEETS_SERVICE_ACCOUNT_KEY).
-
-# Try to load credentials from the Canvas provided __firebase_config first,
-# then fallback to a specific environment variable for Google Sheets,
-# and finally try a local file for development.
-
 service = None # Global variable to store the Google Sheets service object
 
 # Define the scopes required for Google Sheets API
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 def initialize_google_sheets_service():
     """Initializes the Google Sheets API service using credentials."""
@@ -37,11 +26,9 @@ def initialize_google_sheets_service():
     info = {} # Dictionary to hold credential info
 
     # Option 1: Use Canvas's __firebase_config (if it contains GCP service account creds)
-    # This is often the most direct way if Firebase Auth is used and linked to GCP.
     if '__firebase_config' in globals() and __firebase_config:
         try:
             firebase_config_dict = json.loads(__firebase_config)
-            # Assuming the 'private_key' and 'client_email' are present in this config
             info = {
                 "type": firebase_config_dict.get("type", "service_account"),
                 "project_id": firebase_config_dict.get("project_id"),
@@ -109,24 +96,30 @@ initialize_google_sheets_service()
 def get_sheet_data():
     """
     Fetches data from a specified Google Sheet and returns it as JSON.
+    It can now take 'sheet_name' and 'range_name' as query parameters.
+    Example: /get_sheet_data?sheet_name=Annual&range_name=A1:F10
+    To fetch the entire sheet, you can pass range_name='A:Z' (or 'A:ZZZ' for very wide sheets).
     """
     if not service:
-        # Attempt to re-initialize if not already successful (e.g., if startup failed)
-        # This re-initialization is primarily for development/debugging;
-        # in production, you want successful init at startup.
         logging.warning("Google Sheets API service not initialized, attempting re-initialization.")
         if not initialize_google_sheets_service():
             return jsonify(status="error", message="Google Sheets API service not initialized and failed to re-initialize."), 500
 
-    # --- IMPORTANT: Configure your Spreadsheet ID and Range here ---
+    # --- IMPORTANT: Configure your Spreadsheet ID here ---
     # You can get the Spreadsheet ID from the URL of your Google Sheet:
     # https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit
-    SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # <<< REPLACE THIS
-    # The range to fetch data from (e.g., 'Sheet1!A1:E10' or 'Inventory!A:Z')
-    RANGE_NAME = 'Sheet1!A:E' # <<< REPLACE THIS with your sheet name and range
+    SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE' # <<< REPLACE THIS with your actual Spreadsheet ID
 
-    if SPREADSHEET_ID == '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI':
+    if SPREADSHEET_ID == 'YOUR_SPREADSHEET_ID_HERE':
         return jsonify(status="error", message="Please configure SPREADSHEET_ID in app.py"), 500
+
+    # Get sheet_name and range_name from query parameters, with defaults
+    sheet_name = request.args.get('sheet_name', 'overall') # Default to 'overall'
+    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
+
+    # Construct the full RANGE_NAME
+    RANGE_NAME = f"{sheet_name}!{data_range}"
+    logging.info(f"Fetching data from sheet: {sheet_name} with range: {data_range}")
 
     try:
         result = service.spreadsheets().values().get(
@@ -136,33 +129,26 @@ def get_sheet_data():
         values = result.get('values', [])
 
         if not values:
-            return jsonify(status="success", message="No data found in the specified range.", values=[]), 200
+            return jsonify(status="success", message=f"No data found in {sheet_name} for range {data_range}.", values=[]), 200
         else:
             return jsonify(status="success", message="Data fetched successfully.", values=values), 200
 
     except Exception as e:
-        logging.error(f"Error fetching data from Google Sheet: {e}")
+        logging.error(f"Error fetching data from Google Sheet ({RANGE_NAME}): {e}")
         return jsonify(status="error", message=f"Failed to fetch data from Google Sheet: {str(e)}"), 500
 
 @app.route('/')
-@app.route('/index.html')
-def home():
+def serve_index():
+    """Serves the index.html file."""
+    return send_from_directory('.', 'index.html')
+
+@app.route('/data.html')
+def serve_data_html():
     """Serves the data.html file."""
-    # In a real Flask app, you'd typically serve HTML templates from a 'templates' folder.
-    # For this example, we'll assume data.html is in the same directory.
-    # For a simple local serving, you might use:
-    # from flask import send_from_directory
-    # return send_from_directory('.', 'data.html')
-    # Or for Canvas, if you are not running it locally, just ensure the frontend HTML
-    # is deployed separately or served by a static file server.
-    # The current setup expects `data.html` to be loaded directly by the Canvas environment.
-    return "Backend is running. Access data.html directly in your Canvas environment."
+    return send_from_directory('.', 'data.html')
+
 
 if __name__ == '__main__':
     # This block is for local development only. Render will use its own entry point (gunicorn).
-    # To run locally: python app.py
-    # Ensure you have 'service_account_key.json' in the same directory for local testing.
-    # You also need to install Flask and google-api-python-client:
-    # pip install Flask google-api-python-client google-auth-oauthlib google-auth-httplib2
     logging.info("Starting Flask application in local development mode.")
     app.run(debug=True, host='0.0.0.0', port=os.getenv('PORT', 8080))
