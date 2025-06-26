@@ -145,6 +145,7 @@ def get_sheet_data():
         return jsonify(status="error", message=f"Failed to fetch data from Google Sheet: {str(e)}"), 500
 
 @app.route('/')
+@app.route('/index.html')
 def home():
     """Serves the data.html file."""
     # In a real Flask app, you'd typically serve HTML templates from a 'templates' folder.
