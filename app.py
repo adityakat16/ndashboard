@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 import os
 import json
 import logging
+import requests # Make sure requests is imported at the top
 
 app = Flask(__name__)
 
@@ -16,8 +17,11 @@ service = None # Global variable to store the Google Sheets service object
 
 # Define the scopes required for Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-import requests
 
+# =================================================================================
+# NEW: Endpoint for Render to send input to your Local Machine via Ngrok
+# This function is intended to run on your DEPLOYED Render app.
+# =================================================================================
 @app.route('/send_input', methods=['POST'])
 def send_input():
     try:
@@ -28,32 +32,89 @@ def send_input():
             return jsonify(status="error", message="Missing 'stock_symbol' in request."), 400
 
         # Get the ngrok URL from environment variable
+        # This environment variable MUST be set on Render and contain your active Ngrok URL
         ngrok_url = os.environ.get('LOCAL_PROCESSOR_URL')
         if not ngrok_url:
-            return jsonify(status="error", message="NGROK_URL not set in environment variables."), 500
+            logging.error("LOCAL_PROCESSOR_URL environment variable is not set.")
+            return jsonify(status="error", message="LOCAL_PROCESSOR_URL not set in environment variables."), 500
 
-        # Construct full URL to your local endpoint
+        # Construct full URL to your local endpoint that will process the input
         target_url = f"{ngrok_url}/process_input"
+        logging.info(f"Attempting to send input to local machine at: {target_url}")
 
         # Send the data to your local machine
-        response = requests.post(target_url, json={"stock_symbol": stock_symbol}, timeout=15)
+        response = requests.post(target_url, json={"stock_symbol": stock_symbol}, timeout=30) # Increased timeout for Ngrok latency
 
-        # Forward the response back to the client
-        return jsonify(status="success", message="Forwarded to local machine.", data=response.json())
+        # Check if the response from local machine is successful and contains JSON
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        
+        # Try to parse the JSON response from your local machine
+        local_response_data = response.json()
+        logging.info(f"Successfully received response from local machine: {local_response_data}")
 
+        # Forward the response back to the client that called /send_input
+        return jsonify(status="success", message="Forwarded to local machine and received response.", data=local_response_data), 200
+
+    except requests.exceptions.Timeout:
+        logging.exception("Timeout connecting to local machine via Ngrok. Is Ngrok running and URL correct?")
+        return jsonify(status="error", message="Request to local machine timed out. Is your local server and Ngrok running?"), 504
+    except requests.exceptions.RequestException as e:
+        logging.exception(f"Request error sending input to local machine via ngrok: {e}")
+        return jsonify(status="error", message=f"Failed to connect to local machine: {e}"), 503
+    except json.JSONDecodeError as e:
+        logging.exception(f"JSONDecodeError from local machine response: {e}. Response text: {response.text}")
+        return jsonify(status="error", message=f"Received non-JSON response from local machine: {response.text[:200]}"), 502 # Show part of response for debugging
     except Exception as e:
-        logging.exception("Error sending input to local machine via ngrok:")
+        logging.exception("An unexpected error occurred in /send_input:")
         return jsonify(status="error", message=str(e)), 500
 
+# =================================================================================
+# NEW: Endpoint for your LOCAL Flask app to receive input from Render
+# This function is intended to run on your LOCAL computer, exposed by Ngrok.
+# =================================================================================
+@app.route('/process_input', methods=['POST'])
+def process_input():
+    """
+    Receives input from the Render backend and processes it locally.
+    This is where your local data processing logic (e.g., calling your ML model) would go.
+    """
+    try:
+        data = request.get_json()
+        stock_symbol = data.get("stock_symbol")
+
+        if not stock_symbol:
+            return jsonify(status="error", message="Missing 'stock_symbol' in local process_input request."), 400
+
+        logging.info(f"Local machine received stock symbol for processing: {stock_symbol}")
+
+        # --- YOUR LOCAL PROCESSING LOGIC GOES HERE ---
+        # Example: Simulate some local processing
+        processed_data = {
+            "symbol": stock_symbol,
+            "local_timestamp": "2025-06-26 10:00:00",
+            "prediction_score": 0.85,
+            "message": f"Processed '{stock_symbol}' successfully on local machine."
+        }
+
+        # For demonstration, we'll return this simulated data.
+        # In a real scenario, this would involve your actual local ML model, etc.
+        return jsonify(status="success", message="Data processed locally.", processed_data=processed_data), 200
+
+    except Exception as e:
+        logging.exception("Error processing input on local machine:")
+        return jsonify(status="error", message=f"Local processing failed: {str(e)}"), 500
+
+# =================================================================================
+# Existing Google Sheets API Initialization
+# =================================================================================
 def initialize_google_sheets_service():
     """Initializes the Google Sheets API service using credentials."""
-    global service # Indicate that we're modifying the global service variable
+    global service 
     logging.info("Attempting to initialize Google Sheets API service...")
 
     creds_found = False
-    info = {} # Dictionary to hold credential info
+    info = {} 
 
-    # Option 1: Use Canvas's __firebase_config (if it contains GCP service account creds)
     if '__firebase_config' in globals() and __firebase_config:
         try:
             firebase_config_dict = json.loads(__firebase_config)
@@ -75,7 +136,6 @@ def initialize_google_sheets_service():
         except Exception as e:
             logging.error(f"Failed to parse __firebase_config: {e}")
 
-    # Option 2: Load from a dedicated environment variable (e.g., for a separate Google Sheets service account)
     if not creds_found:
         google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
         if google_creds_json:
@@ -86,7 +146,6 @@ def initialize_google_sheets_service():
             except Exception as e:
                 logging.error(f"Failed to parse GOOGLE_CREDENTIALS_JSON env var: {e}")
 
-    # Option 3: Load from a local file (for local development only, NOT for Render deployment)
     if not creds_found and os.path.exists('service_account_key.json'):
         try:
             with open('service_account_key.json', 'r') as f:
@@ -117,6 +176,9 @@ def initialize_google_sheets_service():
 
 initialize_google_sheets_service()
 
+# =================================================================================
+# Existing Google Sheets Data Fetching Endpoint
+# =================================================================================
 @app.route('/get_sheet_data', methods=['GET'])
 def get_sheet_data():
     """
@@ -128,13 +190,15 @@ def get_sheet_data():
         if not initialize_google_sheets_service():
             return jsonify(status="error", message="Google Sheets API service not initialized and failed to re-initialize."), 500
 
-    SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # <<< REPLACE THIS with your actual Spreadsheet ID
+    # SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # Use your actual ID
+    # Ensure you replace this with your actual Google Sheet ID
+    SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # Assuming this is your actual ID from previous logs
 
     if SPREADSHEET_ID == 'YOUR_SPREADSHEET_ID_HERE':
         return jsonify(status="error", message="Please configure SPREADSHEET_ID in app.py"), 500
 
-    sheet_name = request.args.get('sheet_name', 'overall')
-    data_range = request.args.get('range_name', 'A:Z')
+    sheet_name = request.args.get('sheet_name', 'Overall') # Default to 'Overall'
+    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
 
     RANGE_NAME = f"{sheet_name}!{data_range}"
     logging.info(f"Fetching data from sheet: {sheet_name} with range: {data_range}")
@@ -155,32 +219,9 @@ def get_sheet_data():
         logging.error(f"Error fetching data from Google Sheet ({RANGE_NAME}): {e}")
         return jsonify(status="error", message=f"Failed to fetch data from Google Sheet: {str(e)}"), 500
 
-# NEW ROUTE: To handle POST requests from /get_stock_data if your frontend requires it
-@app.route('/get_stock_data', methods=['POST'])
-def get_stock_data_post():
-    # You need to implement logic here to:
-    # 1. Parse data from request.json or request.form
-    # 2. Call Google Sheets API with appropriate sheet_name and range_name based on POST data
-    # 3. Return JSON response similar to get_sheet_data
-
-    # For now, as a placeholder, we'll return an error or simply redirect to the GET function
-    # A cleaner approach would be to have common data fetching logic in a separate function
-    # and call it from both GET and POST routes if they perform similar tasks.
-
-    # Example: If POST request body contains {"sheet_name": "overall", "range_name": "A:B"}
-    # try:
-    #     data = request.get_json()
-    #     sheet_name = data.get('sheet_name', 'overall')
-    #     range_name = data.get('range_name', 'A:Z')
-    #     # Re-use logic from get_sheet_data but don't call the route directly
-    #     # Call a helper function that performs the sheet fetching
-    #     # For simplicity, let's just make it call the GET endpoint's logic with parameters
-    #     return get_sheet_data() # This calls the GET route's function, not recommended directly
-
-    # For now, let's return a basic error to acknowledge the endpoint
-    return jsonify(status="error", message="This endpoint expects POST data and its functionality is not fully implemented yet. Please use GET /get_sheet_data instead."), 400
-
-
+# =================================================================================
+# Existing HTML Serving Routes
+# =================================================================================
 @app.route('/')
 @app.route('/index.html')
 def serve_index():
