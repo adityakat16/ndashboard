@@ -130,6 +130,17 @@
             text-align: center;
         }
 
+        /* --- New/Modified Styles for Right Panel Tables --- */
+        .right-panel table th,
+        .right-panel table td {
+            font-size: 0.85rem; /* Smaller font size */
+            padding: 8px 10px; /* Reduced padding */
+        }
+        .right-panel table {
+            min-width: unset; /* Allow tables to shrink more if necessary */
+        }
+
+
         .message-box {
             background-color: #3a3a3a;
             border: 1px solid #555;
@@ -303,7 +314,7 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1><big>KATTI INVESTMENT CORPORATION - ANALYSIS</big></h1>
+    <h1>KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
@@ -394,74 +405,99 @@
             const thead = document.createElement('thead');
             const tbody = document.createElement('tbody');
 
-            // Determine if the first row is a merged header or part of the actual headers
-            let dataStartIndex = 0;
-            if (sheetData[0] && sheetData[0].length === 1 && sheetData[0][0]) {
-                // If the first row has only one non-empty cell, treat it as a merged header
-                const mergedHeaderCell = document.createElement('th');
-                // Set colSpan dynamically based on the actual number of columns in the *first data row*
-                // or a reasonable fallback if data is sparse
-                mergedHeaderCell.colSpan = sheetData[dataStartIndex + 1] ? sheetData[dataStartIndex + 1].length : sheetData[0].length;
-                mergedHeaderCell.textContent = sheetData[0][0];
-                mergedHeaderCell.classList.add('merged-header');
-                const headerRow1 = document.createElement('tr');
-                headerRow1.appendChild(mergedHeaderCell);
-                thead.appendChild(headerRow1);
-                dataStartIndex = 1; // Start data from the next row
-            }
-
-            // Process the actual column headers (the row after the potential merged header or the first row)
-            if (sheetData[dataStartIndex] && Array.isArray(sheetData[dataStartIndex])) {
+            // --- Special handling for "Overall Data" (two-column: Parameter | Value) ---
+            if (containerId === 'overallTableContainer') {
                 const headerRow = document.createElement('tr');
-                sheetData[dataStartIndex].forEach(headerText => {
-                    const th = document.createElement('th');
-                    th.textContent = headerText;
-                    headerRow.appendChild(th);
-                });
+                let thParam = document.createElement('th');
+                thParam.textContent = 'Parameter';
+                headerRow.appendChild(thParam);
+                let thValue = document.createElement('th');
+                thValue.textContent = 'Value';
+                headerRow.appendChild(thValue);
                 thead.appendChild(headerRow);
-                dataStartIndex++; // Move past the column headers
+                table.appendChild(thead);
+
+                sheetData.forEach(rowData => {
+                    if (rowData.length >= 2) { // Ensure there are at least two columns
+                        const tr = document.createElement('tr');
+                        const tdParam = document.createElement('td');
+                        tdParam.textContent = rowData[0] || '';
+                        tr.appendChild(tdParam);
+                        const tdValue = document.createElement('td');
+                        tdValue.textContent = rowData[1] || '';
+                        tr.appendChild(tdValue);
+                        tbody.appendChild(tr);
+                    }
+                });
+                table.appendChild(tbody);
+
             } else {
-                console.warn(`No column headers found for ${sheetTitle}.`);
-            }
-
-            table.appendChild(thead);
-
-            // Create table body from remaining data rows
-            for (let i = dataStartIndex; i < sheetData.length; i++) {
-                const rowData = sheetData[i];
-                const tr = document.createElement('tr');
-
-                // Ensure rowData is an array to prevent errors if a row is empty/malformed
-                if (!Array.isArray(rowData)) {
-                    console.warn(`Skipping malformed row in ${sheetTitle}:`, rowData);
-                    continue;
+                // --- General handling for Annual, Quarterly, and other tables (dynamic columns) ---
+                let dataStartIndex = 0;
+                // Check if the first row is a potential merged header
+                if (sheetData[0] && sheetData[0].length === 1 && sheetData[0][0]) {
+                    const mergedHeaderCell = document.createElement('th');
+                    // Colspan based on the length of the row expected to be column headers
+                    mergedHeaderCell.colSpan = sheetData[1] ? sheetData[1].length : sheetData[0].length;
+                    mergedHeaderCell.textContent = sheetData[0][0];
+                    mergedHeaderCell.classList.add('merged-header');
+                    const headerRow1 = document.createElement('tr');
+                    headerRow1.appendChild(mergedHeaderCell);
+                    thead.appendChild(headerRow1);
+                    dataStartIndex = 1; // Move past the merged header
                 }
 
-                rowData.forEach((cellData, colIndex) => {
-                    const td = document.createElement('td');
-                    td.textContent = cellData || ''; // Handle potential undefined/null cell data
+                // Process the actual column headers (the row after the potential merged header or the first row)
+                if (sheetData[dataStartIndex] && Array.isArray(sheetData[dataStartIndex])) {
+                    const headerRow = document.createElement('tr');
+                    sheetData[dataStartIndex].forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    dataStartIndex++; // Move past the column headers
+                } else {
+                    console.warn(`No column headers found for ${sheetTitle}.`);
+                }
+                table.appendChild(thead);
 
-                    // Apply colors based on 'Status' column if it exists and is relevant
-                    // This assumes the header for 'Status' exists in the header row
-                    let statusColIndex = -1;
-                    if (sheetData[dataStartIndex -1] && Array.isArray(sheetData[dataStartIndex - 1])) {
-                        statusColIndex = sheetData[dataStartIndex - 1].indexOf('Status');
+                // Create table body from remaining data rows
+                for (let i = dataStartIndex; i < sheetData.length; i++) {
+                    const rowData = sheetData[i];
+                    const tr = document.createElement('tr');
+
+                    if (!Array.isArray(rowData)) {
+                        console.warn(`Skipping malformed row in ${sheetTitle}:`, rowData);
+                        continue;
                     }
 
-                    if (statusColIndex !== -1 && colIndex === statusColIndex) {
-                        if (cellData === 'In Stock') {
-                            td.classList.add('status-in-stock');
-                        } else if (cellData === 'Low Stock') {
-                            td.classList.add('status-low-stock');
-                        } else if (cellData === 'Out of Stock') {
-                            td.classList.add('status-out-of-stock');
+                    rowData.forEach((cellData, colIndex) => {
+                        const td = document.createElement('td');
+                        td.textContent = cellData || '';
+
+                        // Apply colors based on 'Status' column (if applicable and header found)
+                        let statusColIndex = -1;
+                        if (sheetData[dataStartIndex - 1] && Array.isArray(sheetData[dataStartIndex - 1])) {
+                            statusColIndex = sheetData[dataStartIndex - 1].indexOf('Status');
                         }
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
+
+                        if (statusColIndex !== -1 && colIndex === statusColIndex) {
+                            if (cellData === 'In Stock') {
+                                td.classList.add('status-in-stock');
+                            } else if (cellData === 'Low Stock') {
+                                td.classList.add('status-low-stock');
+                            } else if (cellData === 'Out of Stock') {
+                                td.classList.add('status-out-of-stock');
+                            }
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
             }
-            table.appendChild(tbody);
+
             tableContainer.appendChild(table);
             statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
         }
@@ -483,9 +519,9 @@
 
             try {
                 const [overallResponse, annualResponse, quarterlyResponse] = await Promise.all([
-                    fetchSheetData('Overall', 'A:Z'), // Fetch entire 'overall' sheet
-                    fetchSheetData('Annual Data', 'A:Z'),   // Fetch entire 'annual' sheet, all columns
-                    fetchSheetData('Quaterly Data', 'A:Z') // Fetch entire 'quarterly' sheet, all columns
+                    fetchSheetData('Overall', 'A:B'), // Fetch 'overall' sheet, assuming Parameter & Value are in A:B
+                    fetchSheetData('Annual Data', 'A:Z'),   // Fetch entire 'annual' sheet, all columns for dynamic data
+                    fetchSheetData('Quarterly Data', 'A:Z') // Fetch entire 'quarterly' sheet, all columns for dynamic data
                 ]);
 
                 // Render Overall data
