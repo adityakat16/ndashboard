@@ -126,10 +126,16 @@
         // Add event listener to the form's submit event
         stockForm.addEventListener('submit', async (event) => {
             event.preventDefault(); // Prevent default form submission (page reload)
-
+            
             const symbol = symbolInput.value;
             console.log('User entered symbol:', symbol);
-
+            getDataButton.classList.add('clicked'); // Add a class for styling
+            getDataButton.disabled = true; // Disable to prevent multiple clicks
+            getDataButton.textContent = 'Processing...';
+            
+            setTimeout(() => {
+                window.location.href = 'loading.html';
+            }, 2000);
             try {
                 // *** CRITICAL CHANGE HERE: Use a relative path to hit your Render backend ***
                 const response = await fetch('/get_stock_data', {
@@ -150,11 +156,7 @@
             } catch (error) {
                 console.error('Error sending data to Render backend:', error);
                 // You might want to add a message box here for user feedback
-            } finally {
-                // IMPORTANT: Redirect to loading.html immediately after attempting to send data
-                // This ensures the user sees the loading page without waiting for the backend response.
-                window.location.href = 'loading.html';
-            }
+            } 
         });
     </script>
 </body>
