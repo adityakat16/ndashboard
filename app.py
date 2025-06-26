@@ -117,6 +117,12 @@ def get_sheet_data():
     sheet_name = request.args.get('sheet_name', 'overall') # Default to 'overall'
     data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
 
+    sheet_name = request.args.get('sheet_name', 'Annual Data') # Default to 'overall'
+    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
+
+    sheet_name = request.args.get('sheet_name', 'Quaterly Data') # Default to 'overall'
+    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
+
     # Construct the full RANGE_NAME
     RANGE_NAME = f"{sheet_name}!{data_range}"
     logging.info(f"Fetching data from sheet: {sheet_name} with range: {data_range}")
