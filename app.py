@@ -108,7 +108,7 @@ def get_sheet_data():
     # --- IMPORTANT: Configure your Spreadsheet ID here ---
     # You can get the Spreadsheet ID from the URL of your Google Sheet:
     # https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit
-    SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE' # <<< REPLACE THIS with your actual Spreadsheet ID
+    SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # <<< REPLACE THIS with your actual Spreadsheet ID
 
     if SPREADSHEET_ID == 'YOUR_SPREADSHEET_ID_HERE':
         return jsonify(status="error", message="Please configure SPREADSHEET_ID in app.py"), 500
@@ -138,17 +138,30 @@ def get_sheet_data():
         return jsonify(status="error", message=f"Failed to fetch data from Google Sheet: {str(e)}"), 500
 
 @app.route('/')
+@app.route('/index.html')
 def serve_index():
-    """Serves the index.html file."""
-    return send_from_directory('.', 'index.html')
+    """Serves the index.html file from the 'templates' directory."""
+    return send_from_directory('templates', 'index.html')
 
 @app.route('/data.html')
 def serve_data_html():
-    """Serves the data.html file."""
-    return send_from_directory('.', 'data.html')
+    """Serves the data.html file from the 'templates' directory."""
+    return send_from_directory('templates', 'data.html')
+
+@app.route('/loading.html')
+def serve_loading_html():
+    """Serves the loading.html file from the 'templates' directory."""
+    return send_from_directory('templates', 'loading.html')
+
+# Add a route to serve static CSS/JS files if they are in a 'static' folder
+# If you have a 'static' folder for CSS/JS, you might need something like this:
+# @app.route('/static/<path:filename>')
+# def serve_static(filename):
+#     return send_from_directory('static', filename)
 
 
 if __name__ == '__main__':
     # This block is for local development only. Render will use its own entry point (gunicorn).
     logging.info("Starting Flask application in local development mode.")
+    # Ensure you are running from the root directory of your project for send_from_directory to find 'templates'
     app.run(debug=True, host='0.0.0.0', port=os.getenv('PORT', 8080))
