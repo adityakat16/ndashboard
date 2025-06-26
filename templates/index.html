@@ -88,7 +88,6 @@
             <button type="submit" id="getDataButton">Get Data</button>
         </form>
 
-    
     </div>
 
     <script>
@@ -131,10 +130,9 @@
             const symbol = symbolInput.value;
             console.log('User entered symbol:', symbol);
 
-            // Send data to localhost backend using fetch API
             try {
-                // Ensure this URL matches your Flask route for handling stock data requests
-                const response = await fetch('http://localhost:5000/get_stock_data', {
+                // *** CRITICAL CHANGE HERE: Use a relative path to hit your Render backend ***
+                const response = await fetch('/get_stock_data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -143,15 +141,14 @@
                 });
 
                 if (!response.ok) {
-                    console.error('Failed to send data to backend:', response.status, response.statusText);
+                    console.error('Failed to send data to Render backend:', response.status, response.statusText);
                     // You might want to add a message box here for user feedback
                 } else {
                     const result = await response.json();
-                    console.log('Backend response:', result);
-                    // Handle successful backend response if needed before redirecting
+                    console.log('Render Backend response (from forwarding attempt):', result);
                 }
             } catch (error) {
-                console.error('Error sending data to backend:', error);
+                console.error('Error sending data to Render backend:', error);
                 // You might want to add a message box here for user feedback
             } finally {
                 // IMPORTANT: Redirect to loading.html immediately after attempting to send data
