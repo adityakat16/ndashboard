@@ -1,7 +1,12 @@
 import os
 import logging
-from flask import Flask, request, render_template, jsonify, session
-import requests # Import the requests library to send HTTP requests
+from flask import Flask, request, render_template, jsonify, session # session is imported but not used, can be removed if not needed later
+import requests # Used for forwarding to local processor
+
+# Google Sheets API imports
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import json # Used to parse the service account JSON from environment variable
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,8 +21,29 @@ app = Flask(__name__)
 LOCAL_PROCESSOR_URL = os.environ.get('LOCAL_PROCESSOR_URL')
 if not LOCAL_PROCESSOR_URL:
     logging.error("LOCAL_PROCESSOR_URL environment variable not set. Local processing will fail.")
-    # For a deployed app, you might want a more graceful failure or a setup guide.
-    # For now, it will log the error and subsequent calls to the local processor will also log errors.
+
+# --- Google Sheets API Setup ---
+# Get the service account key JSON from environment variable
+GOOGLE_CREDENTIALS_JSON = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+
+# Define the scope for accessing Google Sheets.
+# 'https://www.googleapis.com/auth/spreadsheets' allows read and write.
+# If this app only reads, 'https://www.googleapis.com/auth/spreadsheets.readonly' is more secure.
+# Since your local processor might also use this key to write, a broader scope might be needed for the key itself.
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets'] # Use a scope that allows both read/write if your service account is used for writing too.
+
+service = None # Initialize service as None
+if GOOGLE_CREDENTIALS_JSON:
+    try:
+        info = json.loads(GOOGLE_CREDENTIALS_JSON)
+        credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+        service = build('sheets', 'v4', credentials=credentials)
+        logging.info("Google Sheets API service initialized successfully on Render.")
+    except Exception as e:
+        logging.error(f"Failed to initialize Google Sheets API service on Render: {e}", exc_info=True)
+else:
+    logging.error("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable not set on Render. Google Sheets API will not work.")
+
 
 @app.route('/')
 @app.route('/index.html')
@@ -39,10 +65,7 @@ def loading_page():
 @app.route('/data.html')
 def data_page():
     """
-    Renders the data.html page.
-    In a real application, this page would fetch or retrieve the processed stock data
-    from another backend endpoint or a persistent storage (e.g., Firestore).
-    For this example, data.html has simulated data as discussed previously.
+    Renders the data.html page. This page will then fetch data from /get_sheet_data_from_gsheets.
     """
     return render_template('data.html')
 
@@ -127,10 +150,69 @@ def handle_stock_request():
             "message": f"An unexpected server error occurred: {e}"
         }), 500
 
+# --- NEW: Route to get data from Google Sheets ---
+@app.route('/get_sheet_data_from_gsheets', methods=['GET']) # Using a distinct name
+def get_sheet_data_from_gsheets():
+    """
+    Fetches data directly from Google Sheets using the Sheets API.
+    This endpoint is called by data.html.
+    """
+    global service # Use global service object
+    if not service:
+        logging.error("Google Sheets API service not initialized. Cannot fetch data.")
+        return jsonify({"status": "error", "message": "Google Sheets API not configured on server."}), 500
+
+    # --- Configuration for your Google Sheet ---
+    # Replace with your actual Spreadsheet ID and Range
+    # You can find the Spreadsheet ID in the URL: https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit
+    SPREADSHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE' # <--- IMPORTANT: REPLACE THIS
+    # The range to read. Example: 'Sheet1!A1:E10' or just 'Sheet1' for all data on that sheet.
+    RANGE_NAME = 'Sheet1!A1:Z' # Reads from A1 to Z (all rows in Z) of Sheet1, adjust as needed
+
+    try:
+        # Call the Sheets API to get values
+        result = service.spreadsheets().values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range=RANGE_NAME,
+            majorDimension='ROWS' # Get data row by row
+        ).execute()
+        values = result.get('values', [])
+
+        if not values:
+            logging.info("No data found in the specified Google Sheet range.")
+            return jsonify({"status": "ready", "data": [], "message": "No data found."}), 200
+
+        # Log and return the data
+        logging.info(f"Successfully fetched {len(values)} rows from Google Sheet.")
+        # The Sheets API returns data as a list of lists. The first inner list is usually the header.
+        return jsonify({"status": "ready", "data": values, "message": "Data fetched successfully!"}), 200
+
+    except Exception as e:
+        logging.error(f"Error fetching data from Google Sheet: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": f"Failed to fetch data from Google Sheet: {str(e)}"}), 500
+
+
 if __name__ == '__main__':
     # When running locally, set a placeholder for LOCAL_PROCESSOR_URL
-    # For example, if your local processor runs on port 8000
-    os.environ['LOCAL_PROCESSOR_URL'] = 'http://127.0.0.1:8000'
-    # Remember to set the actual ngrok/public URL in Render's environment variables
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    os.environ['LOCAL_PROCESSOR_URL'] = 'http://127.0.0.1:8000' # Example for your local processor
+    # For local testing, load GOOGLE_APPLICATION_CREDENTIALS_JSON from a file if environment variable is not set
+    # This block is for local development only. Render will use its environment variables.
+    global service # Indicate that we're modifying the global service variable
+    if not GOOGLE_CREDENTIALS_JSON:
+        try:
+            # Assumes service_account_key.json is in the same directory as app.py
+            with open('service_account_key.json', 'r') as f:
+                local_creds_json = f.read()
+                # Set env var for consistency, or just use `info` directly
+                # os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'] = local_creds_json
+                logging.info("Attempting to load GOOGLE_APPLICATION_CREDENTIALS_JSON from local file for development.")
 
+            local_info = json.loads(local_creds_json)
+            local_credentials = service_account.Credentials.from_service_account_info(local_info, scopes=SCOPES)
+            service = build('sheets', 'v4', credentials=local_credentials)
+            logging.info("Google Sheets API service initialized locally.")
+        except FileNotFoundError:
+            logging.warning("service_account_key.json not found locally. Google Sheets API will not work in local development without it.")
+        except Exception as e:
+            logging.error(f"Error loading local service account key or initializing Sheets API locally: {e}", exc_info=True)
+    app.run(debug=True, host='0.0.0.0', port=5000) # Your Render app's local port
