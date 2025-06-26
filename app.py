@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 service = None # Global variable to store the Google Sheets service object
 
 # Define the scopes required for Google Sheets API
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
 
 def initialize_google_sheets_service():
     """Initializes the Google Sheets API service using credentials."""
