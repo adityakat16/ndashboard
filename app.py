@@ -197,7 +197,6 @@ if __name__ == '__main__':
     os.environ['LOCAL_PROCESSOR_URL'] = 'http://127.0.0.1:8000' # Example for your local processor
     # For local testing, load GOOGLE_APPLICATION_CREDENTIALS_JSON from a file if environment variable is not set
     # This block is for local development only. Render will use its environment variables.
-    global service # Indicate that we're modifying the global service variable
     if not GOOGLE_CREDENTIALS_JSON:
         try:
             # Assumes service_account_key.json is in the same directory as app.py
