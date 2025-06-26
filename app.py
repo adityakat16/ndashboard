@@ -113,15 +113,16 @@ def get_sheet_data():
     if SPREADSHEET_ID == 'YOUR_SPREADSHEET_ID_HERE':
         return jsonify(status="error", message="Please configure SPREADSHEET_ID in app.py"), 500
 
-    # Get sheet_name and range_name from query parameters, with defaults
-    sheet_name = request.args.get('sheet_name', 'overall') # Default to 'overall'
+    # Get sheet_name and range_name from query parameters
+    # The default 'overall' will be used if 'sheet_name' parameter is not provided in the URL
+    sheet_name = request.args.get('sheet_name', 'Overall') 
     data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
 
-    sheet_name = request.args.get('sheet_name', 'Annual Data') # Default to 'overall'
-    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
+    sheet_name = request.args.get('sheet_name', 'Annual Data') 
+    data_range = request.args.get('range_name', 'A:Z')
 
-    sheet_name = request.args.get('sheet_name', 'Quaterly Data') # Default to 'overall'
-    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
+    sheet_name = request.args.get('sheet_name', 'Quarterly Data') 
+    data_range = request.args.get('range_name', 'A:Z')
 
     # Construct the full RANGE_NAME
     RANGE_NAME = f"{sheet_name}!{data_range}"
@@ -163,7 +164,7 @@ def serve_loading_html():
 # If you have a 'static' folder for CSS/JS, you might need something like this:
 # @app.route('/static/<path:filename>')
 # def serve_static(filename):
-#     return send_from_directory('static', filename)
+#       return send_from_directory('static', filename)
 
 
 if __name__ == '__main__':
