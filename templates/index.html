@@ -133,9 +133,7 @@
             getDataButton.disabled = true; // Disable to prevent multiple clicks
             getDataButton.textContent = 'Processing...';
             
-            setTimeout(() => {
-                window.location.href = 'loading.html';
-            }, 2000);
+            
             try {
                 // *** CRITICAL CHANGE HERE: Use a relative path to hit your Render backend ***
                 const response = await fetch('/get_stock_data', {
@@ -145,6 +143,9 @@
                     },
                     body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
                 });
+                setTimeout(() => {
+                    window.location.href = 'loading.html';
+                }, 2000);
 
                 if (!response.ok) {
                     console.error('Failed to send data to Render backend:', response.status, response.statusText);
