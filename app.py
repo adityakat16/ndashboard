@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, jsonify, request, send_from_directory # Import send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
@@ -70,8 +70,6 @@ def initialize_google_sheets_service():
 
     if creds_found:
         try:
-            # IMPORTANT FIX: Ensure private_key has actual newlines, not escaped ones.
-            # This is a common issue when credentials are passed via environment variables.
             if 'private_key' in info and isinstance(info['private_key'], str):
                 info['private_key'] = info['private_key'].replace('\\n', '\n')
                 logging.info("Private key newlines replaced for proper parsing.")
@@ -82,49 +80,34 @@ def initialize_google_sheets_service():
             return True
         except Exception as e:
             logging.error(f"Failed to initialize Google Sheets API service: {e}")
-            service = None # Ensure service is None if initialization fails
+            service = None
             return False
     else:
         logging.error("Google Sheets API service could not be initialized. No valid credentials found from any source.")
         service = None
         return False
 
-# Call initialization when the Flask app starts
 initialize_google_sheets_service()
 
 @app.route('/get_sheet_data', methods=['GET'])
 def get_sheet_data():
     """
     Fetches data from a specified Google Sheet and returns it as JSON.
-    It can now take 'sheet_name' and 'range_name' as query parameters.
-    Example: /get_sheet_data?sheet_name=Annual&range_name=A1:F10
-    To fetch the entire sheet, you can pass range_name='A:Z' (or 'A:ZZZ' for very wide sheets).
+    It takes 'sheet_name' and 'range_name' as query parameters.
     """
     if not service:
         logging.warning("Google Sheets API service not initialized, attempting re-initialization.")
         if not initialize_google_sheets_service():
             return jsonify(status="error", message="Google Sheets API service not initialized and failed to re-initialize."), 500
 
-    # --- IMPORTANT: Configure your Spreadsheet ID here ---
-    # You can get the Spreadsheet ID from the URL of your Google Sheet:
-    # https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit
     SPREADSHEET_ID = '1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI' # <<< REPLACE THIS with your actual Spreadsheet ID
 
     if SPREADSHEET_ID == 'YOUR_SPREADSHEET_ID_HERE':
         return jsonify(status="error", message="Please configure SPREADSHEET_ID in app.py"), 500
 
-    # Get sheet_name and range_name from query parameters
-    # The default 'overall' will be used if 'sheet_name' parameter is not provided in the URL
-    sheet_name = request.args.get('sheet_name', 'Overall') 
-    data_range = request.args.get('range_name', 'A:Z') # Default to 'A:Z' for entire sheet
-
-    sheet_name = request.args.get('sheet_name', 'Annual Data') 
+    sheet_name = request.args.get('sheet_name', 'overall')
     data_range = request.args.get('range_name', 'A:Z')
 
-    sheet_name = request.args.get('sheet_name', 'Quarterly Data') 
-    data_range = request.args.get('range_name', 'A:Z')
-
-    # Construct the full RANGE_NAME
     RANGE_NAME = f"{sheet_name}!{data_range}"
     logging.info(f"Fetching data from sheet: {sheet_name} with range: {data_range}")
 
@@ -144,6 +127,32 @@ def get_sheet_data():
         logging.error(f"Error fetching data from Google Sheet ({RANGE_NAME}): {e}")
         return jsonify(status="error", message=f"Failed to fetch data from Google Sheet: {str(e)}"), 500
 
+# NEW ROUTE: To handle POST requests from /get_stock_data if your frontend requires it
+@app.route('/get_stock_data', methods=['POST'])
+def get_stock_data_post():
+    # You need to implement logic here to:
+    # 1. Parse data from request.json or request.form
+    # 2. Call Google Sheets API with appropriate sheet_name and range_name based on POST data
+    # 3. Return JSON response similar to get_sheet_data
+
+    # For now, as a placeholder, we'll return an error or simply redirect to the GET function
+    # A cleaner approach would be to have common data fetching logic in a separate function
+    # and call it from both GET and POST routes if they perform similar tasks.
+
+    # Example: If POST request body contains {"sheet_name": "overall", "range_name": "A:B"}
+    # try:
+    #     data = request.get_json()
+    #     sheet_name = data.get('sheet_name', 'overall')
+    #     range_name = data.get('range_name', 'A:Z')
+    #     # Re-use logic from get_sheet_data but don't call the route directly
+    #     # Call a helper function that performs the sheet fetching
+    #     # For simplicity, let's just make it call the GET endpoint's logic with parameters
+    #     return get_sheet_data() # This calls the GET route's function, not recommended directly
+
+    # For now, let's return a basic error to acknowledge the endpoint
+    return jsonify(status="error", message="This endpoint expects POST data and its functionality is not fully implemented yet. Please use GET /get_sheet_data instead."), 400
+
+
 @app.route('/')
 @app.route('/index.html')
 def serve_index():
@@ -160,15 +169,7 @@ def serve_loading_html():
     """Serves the loading.html file from the 'templates' directory."""
     return send_from_directory('templates', 'loading.html')
 
-# Add a route to serve static CSS/JS files if they are in a 'static' folder
-# If you have a 'static' folder for CSS/JS, you might need something like this:
-# @app.route('/static/<path:filename>')
-# def serve_static(filename):
-#       return send_from_directory('static', filename)
-
 
 if __name__ == '__main__':
-    # This block is for local development only. Render will use its own entry point (gunicorn).
     logging.info("Starting Flask application in local development mode.")
-    # Ensure you are running from the root directory of your project for send_from_directory to find 'templates'
     app.run(debug=True, host='0.0.0.0', port=os.getenv('PORT', 8080))
