@@ -134,40 +134,28 @@
             getDataButton.textContent = 'Processing...';
             
             
-            try {            console.log('Initiating fetch request...');
-            fetch('/get_stock_data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ symbol: symbol })
-            })
-            .then(response => {
-                console.log('Fetch response received.');
+            try {Add commentMore actions
+                // *** CRITICAL CHANGE HERE: Use a relative path to hit your Render backend ***
+                const response = await fetch('/get_stock_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symbol: symbol }) // Send the symbol as JSON
+                });
                 if (!response.ok) {
                     console.error('Failed to send data to Render backend:', response.status, response.statusText);
                 }
-                return response.json();
-            })
-            .then(result => {
-                console.log('Render Backend response (from forwarding attempt):', result);
-            })
-            .catch(error => {
-                console.error('Error sending data to Render backend:', error);
-            })
-            .finally(() => {
-                // This block runs after the fetch promise settles (success or failure)
-                // This is NOT where the redirection delay should be if you want a fixed 2s after click.
-                console.log('Fetch promise settled (finally block).');
-            });
-
-            // *** This is the correct place for the 2-second delay before redirecting ***
-            // It runs immediately after the fetch is initiated (non-blocking).
-            console.log('Setting timeout for redirection...');
-            setTimeout(() => {
-                console.log('Timeout finished. Redirecting to loading.html...');
-                window.location.href = 'loading.html';
-            }, 2000); // 2000 milliseconds = 2 seconds
+                                    // You might want to add a message box here for user feedbackAdd commentMore actions
+                } else {
+                    const result = await response.json();
+                    console.log('Render Backend response (from forwarding attempt):', result);
+                } catch (error) {
+                     console.error('Error sending data to Render backend:', error);Add commentMore actions
+                // You might want to add a message box here for user feedback
+            } setTimeout(() => {
+                window.location.href = 'loading.html';Add commentMore actions
+            }, 2000);
         });
     </script>
 </body>
