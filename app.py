@@ -20,6 +20,7 @@ if not LOCAL_PROCESSOR_URL:
     # For now, it will log the error and subsequent calls to the local processor will also log errors.
 
 @app.route('/')
+@app.route('/index.html')
 def index():
     """
     Renders the main index.html page.
