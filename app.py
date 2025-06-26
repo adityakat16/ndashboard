@@ -28,7 +28,7 @@ def send_input():
             return jsonify(status="error", message="Missing 'stock_symbol' in request."), 400
 
         # Get the ngrok URL from environment variable
-        ngrok_url = os.environ.get('NGROK_URL')
+        ngrok_url = os.environ.get('LOCAL_PROCESSOR_URL')
         if not ngrok_url:
             return jsonify(status="error", message="NGROK_URL not set in environment variables."), 500
 
