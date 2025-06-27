@@ -21,7 +21,7 @@
         }
         .main-content-wrapper {
             display: flex; /* Use flexbox for the main two-column layout */
-            flex-wrap: nowrap; /* Allow wrapping on smaller screens */
+            flex-wrap: nowrap; /* Prevent wrapping initially on large screens */
             gap: 20px; /* Space between columns */
             width: 100%;
             max-width: 1600px; /* Max width for the entire dashboard */
@@ -29,7 +29,7 @@
             justify-content: center; /* Center content horizontally */
         }
         .left-panel {
-            flex: 0.5; /* Takes more space on wider screens */
+            flex: 1; /* Retained flex: 1 for left panel */
             min-width: 400px; /* Minimum width for the left panel */
             background-color: #2c2c2c; /* Darker panel background */
             padding: 30px;
@@ -39,7 +39,7 @@
             flex-direction: column;
         }
         .right-panel {
-            flex: 4; /* Takes less space than left */
+            flex: 3; /* Retained flex: 3 for right panel */
             min-width: 300px; /* Minimum width for the right panel */
             display: flex;
             flex-direction: column;
@@ -58,7 +58,7 @@
         h1 {
             color: #4CAF50; /* Green from your theme */
             margin-bottom: 25px;
-            font-size: 2.25rem;
+            font-size: 35px; /* Directly use px value */
             font-weight: 700;
             text-align: center;
             width: 100%; /* Ensure h1 spans full width */
@@ -76,44 +76,26 @@
             border-spacing: 0;
             margin-top: 20px;
             border-radius: 10px;
-            word-break:break-word;
-            overflow: hidden;
-            table-layout: fixed;
+            overflow: hidden; /* Ensures border-radius is applied correctly */
+            table-layout: fixed; /* Set table-layout to fixed for all tables by default */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size: 0.75rem; /* Base font-size from your provided code */
         }
         th, td {
-            padding: 4px 4px;
+            padding: 4px 4px; /* Base padding from your provided code */
             text-align: left;
             border: 1px solid #3a3a3a; /* Darker border for cells */
             color: #f0f0f0; /* Light text for table content */
-            white-space: nowrap;
-            text-overflow: ellipsis;           
+            white-space: nowrap; /* Default to no wrap for all cells */
+            overflow: hidden; /* Hide overflowing text */
+            text-overflow: ellipsis; /* Add ellipsis for hidden text */
         }
-        #annualTableContainer,
-        #annualTableContainer td,
-        #annualTableContainer th{
-            font-size: 10px;
-        }
-        #quarterlyTableContainer,
-        #quarterlyTableContainer td,
-        #quarterlyTableContainer th{
-            font-size: 10px;
-        }
-        td:first-child,
-        th:first-child {
-            font-size: 11px !important;
-            white-space: nowrap;      /* allows wrapping */
-            word-break: break-word;
-            width: 102px;
-        }
-
         th {
             background-color: #4CAF50; /* Green header from your theme */
             color: white;
             font-weight: 600;
             text-transform: uppercase;
             border: 1px solid #4CAF50; /* Matching border */
-            
         }
         tr:nth-child(even) td {
             background-color: #333333; /* Slightly lighter dark for even rows */
@@ -152,14 +134,58 @@
             text-align: center;
         }
 
-        /* --- New/Modified Styles for Right Panel Tables --- */
-        .right-panel table th,
-        .right-panel table td {
-            font-size: 0.85rem; /* Smaller font size */
-            padding: 8px 10px; /* Reduced padding */
+        /* --- Custom Styles for Left Panel Table (Overall) - Bigger and More Spacious --- */
+        #overallTableContainer table {
+            table-layout: auto; /* Allow auto layout for left panel for natural column sizing */
+            font-size: 14px; /* Retained font size */
         }
-        .right-panel table {
-            min-width: unset; /* Allow tables to shrink more if necessary */
+        #overallTableContainer th,
+        #overallTableContainer td {
+            padding: 16px 24px; /* Retained padding */
+            white-space: nowrap; /* Keep first two columns on one line */
+        }
+        /* Override specific first/second child for overallTableContainer */
+        #overallTableContainer td:first-child,
+        #overallTableContainer th:first-child {
+            font-size: 14px !important; /* Retained font size */
+            white-space: nowrap; /* Ensure nowrap for first column */
+        }
+        #overallTableContainer td:nth-child(2),
+        #overallTableContainer th:nth-child(2) {
+            font-size: 14px !important; /* Retained font size */
+            white-space: nowrap; /* Ensure nowrap for second column */
+        }
+
+
+        /* --- Custom Styles for Right Panel Tables (Annual/Quarterly) - Even Smaller and Single Line --- */
+        #annualTableContainer table,
+        #quarterlyTableContainer table {
+            table-layout: fixed; /* Explicitly fixed for tight control */
+            width: 100%; /* Ensure it fills container */
+        }
+        #annualTableContainer th, #annualTableContainer td,
+        #quarterlyTableContainer th, #quarterlyTableContainer td {
+            font-size: 10px; /* Retained font size */
+            padding: 4px 4px; /* Retained padding */
+            white-space: nowrap; /* Force content into single line */
+            overflow: hidden; /* Hide overflowing text */
+            text-overflow: ellipsis; /* Add ellipsis for hidden text */
+        }
+        /* Fixed widths for the first two columns in right panels */
+        #annualTableContainer th:nth-child(1), #annualTableContainer td:nth-child(1),
+        #quarterlyTableContainer th:nth-child(1), #quarterlyTableContainer td:nth-child(1) {
+            width: 102px; /* Retained width for stock symbol */
+        }
+        /* The specific rule below also applies to the first child, so ensure the above is correctly applied */
+        td:first-child, th:first-child { /* This rule was causing issues with overall table first column */
+            /* font-size: 11px !important; REMOVED, now handled by specific table selectors */
+            /* white-space: nowrap; is default now, word-break handled by specific table */
+            /* width: 102px; this was making left panel narrow */
+        }
+
+        /* Ensure no horizontal scrolling on the table containers themselves */
+        .flex-grow { /* Targets all flex-grow elements, assuming they are the table containers */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
 
 
@@ -215,27 +241,8 @@
             margin-right: 8px;
         }
 
-        .spinner {
-            border: 8px solid #444; /* Light grey */
-            border-top: 8px solid #4CAF50; /* Green */
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto; /* Centered with margin */
-            display: block; /* Shown by default until data loads */
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* Removed spinner and status message styles as they are no longer used in HTML */
 
-        .status-message {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1rem;
-            color: #ccc;
-        }
         .refresh-button {
             background-color: #5a67d8; /* Blue-grey for refresh */
             color: white;
@@ -253,42 +260,36 @@
             background-color: #434c9c;
             transform: translateY(-2px);
         }
-        #overallTableContainer table {
-            width: 100%;
-            table-layout: auto;
-            font-size: 14px;
-            border-collapse: collapse;
-            border-radius: 10px;
-        }
-
-        #overallTableContainer td,
-        #overallTableContainer th {
-            padding: 16px 24px;
-            min-width: fit-content;
-            text-align: left;
-            white-space: nowrap;
-        }
-        #overallTableContainer td:first-child,
-        #overallTableContainer th:first-child {
-            font-size: 14px !important;
-        }
-        #overallTableContainer td:second-child,
-        #overallTableContainer th:second-child {
-            font-size: 14px !important;
-        }
 
         /* Media queries for responsiveness */
         @media (max-width: 768px) {
             .main-content-wrapper {
                 flex-direction: column; /* Stack columns vertically on smaller screens */
                 align-items: center;
+                flex-wrap: wrap; /* Allow wrapping on small screens */
             }
             .left-panel, .right-panel, .right-panel > div {
                 width: 100%;
                 min-width: unset; /* Remove min-width on small screens */
             }
-            table {
-                font-size: 0.65rem;
+            /* Adjust table fonts for smaller screens if needed */
+            #overallTableContainer th,
+            #overallTableContainer td {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+            }
+            #annualTableContainer th, #annualTableContainer td,
+            #quarterlyTableContainer th, #quarterlyTableContainer td {
+                font-size: 0.35rem; /* Even smaller on mobile */
+                padding: 0px 1px;
+            }
+            #annualTableContainer th:nth-child(1), #annualTableContainer td:nth-child(1),
+            #quarterlyTableContainer th:nth-child(1), #quarterlyTableContainer td:nth-child(1) {
+                width: 40px; /* Adjust fixed width for stock symbol on mobile */
+            }
+            #annualTableContainer th:nth-child(2), #annualTableContainer td:nth-child(2),
+            #quarterlyTableContainer th:nth-child(2), #quarterlyTableContainer td:nth-child(2) {
+                width: 70px; /* Adjust fixed width for parameter names on mobile */
             }
         }
     </style>
@@ -362,16 +363,15 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 style="font-size:35px;"><center>KATTI INVESTMENT CORPORATION</center></h1>
+    <h1>KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
         <div class="left-panel">
             <h2>Overall Data</h2>
-            <div id="overallLoadingSpinner" class="spinner"></div>
-            <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
-            <div id="overallTableContainer" class="flex-grow overflow-x-auto">
-                <!-- overall table will be loaded here by JavaScript -->
+            <!-- Removed loading spinner and status message -->
+            <div id="overallTableContainer" class="flex-grow">
+                <!-- Overall table will be loaded here by JavaScript -->
             </div>
         </div>
 
@@ -380,9 +380,8 @@
             <!-- Annual Statistics Section -->
             <div>
                 <h2>Annual Statistics</h2>
-                <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
-                <div id="annualTableContainer" class="flex-grow overflow-x-auto">
+                <!-- Removed loading spinner and status message -->
+                <div id="annualTableContainer" class="flex-grow">
                     <!-- Annual table will be loaded here by JavaScript -->
                 </div>
             </div>
@@ -390,9 +389,8 @@
             <!-- Quarterly Statistics Section -->
             <div>
                 <h2>Quarterly Statistics</h2>
-                <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
-                <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto">
+                <!-- Removed loading spinner and status message -->
+                <div id="quarterlyTableContainer" class="flex-grow">
                     <!-- Quarterly table will be loaded here by JavaScript -->
                 </div>
             </div>
@@ -410,7 +408,8 @@
          */
         async function fetchSheetData(sheetName, dataRange) {
             try {
-                const url = `/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
+                const BASE_API_URL = ''; 
+                const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
                 console.log(`Fetching data from: ${url}`);
                 const response = await fetch(url);
                 const data = await response.json();
@@ -434,16 +433,19 @@
          */
         function renderTable(containerId, sheetData, sheetTitle) {
             const tableContainer = document.getElementById(containerId);
+            // FIX: Corrected the access method for statusMessage ID
             const statusMessage = document.getElementById(containerId.replace('TableContainer', 'StatusMessage'));
-            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner'));
+            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner')); /* This will now be null as element is removed, but won't cause error */
+
 
             // Clear previous content
             tableContainer.innerHTML = '';
-            loadingSpinner.style.display = 'none'; // Hide spinner
-            statusMessage.textContent = ''; // Clear status message
+            // REMOVED: loadingSpinner.style.display = 'none';
+            // REMOVED: statusMessage.textContent = ''; 
 
             if (!sheetData || sheetData.length === 0) {
-                statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
+                // Keep this line for cases where data is genuinely empty
+                // statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`; 
                 return;
             }
 
@@ -547,52 +549,38 @@
             }
 
             tableContainer.appendChild(table);
-            statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
+            // REMOVED: statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
         }
 
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
         async function loadAllSheetData() {
-            // Show spinners and update status messages for all panels
-            document.getElementById('overallLoadingSpinner').style.display = 'block';
-            document.getElementById('annualLoadingSpinner').style.display = 'block';
-            document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
-
-            document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...';
-            document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...';A
-            document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...';
-
+            // Removed showing spinners and updating status messages from here
             document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
             try {
                 const [overallResponse, annualResponse, quarterlyResponse] = await Promise.all([
-                    fetchSheetData('Overall', 'A:B'), // Fetch 'overall' sheet, assuming Parameter & Value are in A:B
-                    fetchSheetData('Annual Data', 'A:Z'),   // Fetch entire 'annual' sheet, all columns for dynamic data
-                    fetchSheetData('Quarterly Data', 'A:Z') // Fetch entire 'quarterly' sheet, all columns for dynamic data
+                    fetchSheetData('Overall', 'A:B'),
+                    fetchSheetData('Annual Data', 'A:Z'),
+                    fetchSheetData('Quarterly Data', 'A:Z')
                 ]);
 
-                // Render Overall data
                 if (overallResponse.status === 'ready') {
                     renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
                 } else {
-                    document.getElementById('overallStatusMessage').textContent = overallResponse.message;
                     showMessage(overallResponse.message);
                 }
 
-                // Render Annual data
                 if (annualResponse.status === 'ready') {
                     renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
                 } else {
-                    document.getElementById('annualStatusMessage').textContent = annualResponse.message;
                     showMessage(annualResponse.message);
                 }
 
-                // Render Quarterly data
                 if (quarterlyResponse.status === 'ready') {
                     renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
                 } else {
-                    document.getElementById('quarterlyStatusMessage').textContent = quarterlyResponse.message;
                     showMessage(quarterlyResponse.message);
                 }
 
@@ -600,10 +588,7 @@
                 console.error("Error loading all sheet data:", error);
                 showMessage("Failed to load some or all sheet data. Please check your connection or try again.");
             } finally {
-                // Hide all spinners regardless of success/failure
-                document.getElementById('overallLoadingSpinner').style.display = 'none';
-                document.getElementById('annualLoadingSpinner').style.display = 'none';
-                document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
+                // Removed hiding spinners and status messages from here
                 document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
             }
         }
