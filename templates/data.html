@@ -80,7 +80,7 @@
             overflow: hidden; /* Ensures border-radius is applied correctly */
             table-layout: fixed; /* Set table-layout to fixed for all tables by default */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-size: 0.75rem; /* Base font-size from your provided code */
+            font-size: 11px; /* Base font-size from your provided code */
         }
         th, td {
             padding: 4px 4px; /* Base padding from your provided code */
@@ -138,11 +138,11 @@
         /* --- Custom Styles for Left Panel Table (Overall) - Bigger and More Spacious --- */
         #overallTableContainer table {
             table-layout: auto; /* Allow auto layout for left panel for natural column sizing */
-            font-size: 14px; /* Retained font size */
+            font-size: 13px; /* Retained font size */
         }
         #overallTableContainer th,
         #overallTableContainer td {
-            padding: 16px 24px; /* Retained padding */
+            padding: 8px 12px; /* Retained padding */
             white-space: nowrap; /* Keep first two columns on one line */
         }
         /* Override specific first/second child for overallTableContainer */
@@ -150,7 +150,7 @@
         #overallTableContainer td:nth-child(2),
         #overallTableContainer th:first-child,
         #overallTableContainer th:nth-child(2) {
-            font-size: 14px !important; /* Retained font size */
+            font-size: 13px !important; /* Retained font size */
             white-space: nowrap; /* Ensure nowrap for first and second column */
         }
 
@@ -321,14 +321,25 @@
                     console.warn('Firebase config not provided. Running without Firebase.');
                 }
                 // Load data for all sheets on initial page load
+                await loadStockName();
                 loadAllSheetData();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 // No showMessage call here, as per request
                 // Even if Firebase fails, try to load data
+                await loadStockName();
                 loadAllSheetData();
             }
         };
+        async function loadStockName() {
+        const response = await fetchSheetData("Stock_Symbol", "A1"); // or "A1:A1" if only one cell
+        if (response.status === 'ready' && response.data && response.data.length > 0) {
+            const stockName = response.data[0][0]; // First row, first column
+            document.getElementById('stockNameSpan').textContent = stockName;
+        } else {
+            console.warn("Stock name not found in Google Sheet.");
+        }
+    }
 
         // Removed showMessage and closeMessage functions as per request
 
@@ -339,11 +350,10 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 id="mainTitle">KATTI INVESTMENT CORPORATION - ANALYSIS</h1>
+    <h1 id="mainTitle" style="font-size=24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span></h1>
 
     <div class="main-content-wrapper">
         <div class="left-panel">
-            <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
             <div id="overallStatusMessage" class="status-message"></div>
             <div id="overallTableContainer" class="flex-grow">
