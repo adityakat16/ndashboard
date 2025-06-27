@@ -362,7 +362,7 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 style="font-size:35px;"><center>KATTI INVESTMENT CORPORATION</center></h1>
+    <h1 style="font-size:35px;"><center>KATTI INVESTMENT CORPORATION - ANALYSIS OF </center></h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
@@ -552,10 +552,10 @@
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
-        const stockName = symbol.toUpperCase(); // or from response
-        const titleElement = document.getElementById('pageTitle');
-        titleElement.textContent = `KATTI INVESTMENT CORPORATION – ANALYSIS OF ${symbol}`;
-        async function loadAllSheetData() {
+            const stockName = symbol.toUpperCase(); // or from response
+            const titleElement = document.getElementById('pageTitle');
+            titleElement.textContent = `KATTI INVESTMENT CORPORATION – ANALYSIS OF ${symbol}`;
+            async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
             document.getElementById('overallLoadingSpinner').style.display = 'block';
             document.getElementById('annualLoadingSpinner').style.display = 'block';
