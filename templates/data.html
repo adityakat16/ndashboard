@@ -603,14 +603,22 @@
 
         // Event listener for the refresh all data button
         document.getElementById('refreshAllButton').addEventListener('click', async () => {
-            await loadAllSheetData(); // Refresh all tables first
-            setTimeout(() => {
-                loadStockName(); // Then refresh the stock name
-            }, 1000); // 1s delay
+            // Show button as loading immediately
+            document.getElementById('refreshAllButton').textContent = 'Refreshing...';
+            document.getElementById('refreshAllButton').disabled = true;
+        
+            try {
+                await Promise.all([
+                    loadStockName(),       // Load stock name first
+                    loadAllSheetData()     // Then load all other sheets
+                ]);
+            } catch (err) {
+                console.error("Error during refresh:", err);
+            } finally {
+                document.getElementById('refreshAllButton').textContent = 'Refresh All Data';
+                document.getElementById('refreshAllButton').disabled = false;
+            }
         });
-
-
-        // Initial load is handled by window.onload
     </script>
 </body>
 </html>
