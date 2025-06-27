@@ -552,9 +552,7 @@
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
-            const stockName = symbol.toUpperCase(); // or from response
-            const titleElement = document.getElementById('pageTitle');
-            titleElement.textContent = `KATTI INVESTMENT CORPORATION – ANALYSIS OF ${symbol}`;
+        
         async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
             document.getElementById('overallLoadingSpinner').style.display = 'block';
