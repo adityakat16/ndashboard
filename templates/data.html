@@ -80,7 +80,7 @@
             overflow: hidden; /* Ensures border-radius is applied correctly */
             table-layout: fixed; /* Set table-layout to fixed for all tables by default */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-size: 11px; /* Base font-size from your provided code */
+             /* Base font-size from your provided code */
         }
         th, td {
             padding: 4px 4px; /* Base padding from your provided code */
@@ -90,6 +90,7 @@
             white-space: nowrap; /* Default to no wrap for all cells */
             overflow: hidden; /* Hide overflowing text */
             text-overflow: ellipsis; /* Add ellipsis for hidden text */
+            font-size: 12px !important;
         }
         th {
             background-color: #4CAF50; /* Green header from your theme */
@@ -98,6 +99,7 @@
             text-transform: uppercase;
             border: 1px solid #4CAF50; /* Matching border */
         }
+        
         tr:nth-child(even) td {
             background-color: #333333; /* Slightly lighter dark for even rows */
         }
@@ -142,7 +144,7 @@
         }
         #overallTableContainer th,
         #overallTableContainer td {
-            padding: 8px 12px; /* Retained padding */
+            padding: 15px 18px; /* Retained padding */
             white-space: nowrap; /* Keep first two columns on one line */
         }
         /* Override specific first/second child for overallTableContainer */
@@ -163,7 +165,7 @@
         }
         #annualTableContainer th, #annualTableContainer td,
         #quarterlyTableContainer th, #quarterlyTableContainer td {
-            font-size: 10px; /* Retained font size */
+            font-size: 12px !important; /* Retained font size */
             padding: 4px 4px; /* Retained padding */
             white-space: nowrap; /* Force content into single line */
             overflow: hidden; /* Hide overflowing text */
@@ -176,7 +178,7 @@
         }
         /* The specific rule below also applies to the first child, so ensure the above is correctly applied */
         td:first-child, th:first-child { /* This rule was causing issues with overall table first column */
-            /* font-size: 11px !important; REMOVED, now handled by specific table selectors */
+             font-size: 11px !important;/* REMOVED, now handled by specific table selectors */
             /* white-space: nowrap; is default now, word-break handled by specific table */
             /* width: 102px; this was making left panel narrow */
         }
@@ -331,11 +333,13 @@
                 loadAllSheetData();
             }
         };
+
+        //load stock name 
         async function loadStockName() {
         const response = await fetchSheetData("Stock_Symbol", "A1"); // or "A1:A1" if only one cell
         if (response.status === 'ready' && response.data && response.data.length > 0) {
             const stockName = response.data[0][0]; // First row, first column
-            document.getElementById('stockNameSpan').textContent = stockName;
+            document.getElementById('stockNameSpan').textContent = stockName.toUpperCase();
         } else {
             console.warn("Stock name not found in Google Sheet.");
         }
@@ -350,12 +354,12 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 id="mainTitle" style="font-size=24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span></h1>
+    <h1 id="mainTitle" style="font-size:24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span></h1>
 
     <div class="main-content-wrapper">
         <div class="left-panel">
             <div id="overallLoadingSpinner" class="spinner"></div>
-            <div id="overallStatusMessage" class="status-message"></div>
+            
             <div id="overallTableContainer" class="flex-grow">
                 </div>
         </div>
@@ -363,13 +367,13 @@
         <div class="right-panel">
             <div>
                 <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message"></div> <div id="annualTableContainer" class="flex-grow">
+                <div id="annualTableContainer" class="flex-grow">
                     </div>
             </div>
 
             <div>
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message"></div> <div id="quarterlyTableContainer" class="flex-grow">
+                <div id="quarterlyTableContainer" class="flex-grow">
                     </div>
             </div>
         </div>
@@ -595,9 +599,14 @@
                 document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
             }
         }
+        
 
         // Event listener for the refresh all data button
-        document.getElementById('refreshAllButton').addEventListener('click', loadAllSheetData);
+        document.getElementById('refreshAllButton').addEventListener('click', () => {
+            loadAllSheetData();     // Refresh the tables
+            loadStockName();        // Refresh the stock name from sheet
+        });
+
 
         // Initial load is handled by window.onload
     </script>
