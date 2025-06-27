@@ -334,16 +334,7 @@
             }
         };
 
-        //load stock name 
-        async function loadStockName() {
-        const response = await fetchSheetData("Stock_Symbol", "A1"); // or "A1:A1" if only one cell
-        if (response.status === 'ready' && response.data && response.data.length > 0) {
-            const stockName = response.data[0][0]; // First row, first column
-            document.getElementById('stockNameSpan').textContent = stockName.toUpperCase();
-        } else {
-            console.warn("Stock name not found in Google Sheet.");
-        }
-    }
+        
 
         // Removed showMessage and closeMessage functions as per request
 
@@ -542,6 +533,16 @@
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
+        //load stock name 
+        async function loadStockName() {
+            const response = await fetchSheetData("Stock_Symbol", "A1"); // or "A1:A1" if only one cell
+            if (response.status === 'ready' && response.data && response.data.length > 0) {
+                const stockName = response.data[0][0]; // First row, first column
+                document.getElementById('stockNameSpan').textContent = stockName.toUpperCase();
+            } else {
+                console.warn("Stock name not found in Google Sheet.");
+            }
+        }
         async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
             // Overall Data
@@ -602,23 +603,11 @@
         
 
         // Event listener for the refresh all data button
-        document.getElementById('refreshAllButton').addEventListener('click', async () => {
-            // Show button as loading immediately
-            document.getElementById('refreshAllButton').textContent = 'Refreshing...';
-            document.getElementById('refreshAllButton').disabled = true;
-        
-            try {
-                await Promise.all([
-                    loadStockName(),       // Load stock name first
-                    loadAllSheetData()     // Then load all other sheets
-                ]);
-            } catch (err) {
-                console.error("Error during refresh:", err);
-            } finally {
-                document.getElementById('refreshAllButton').textContent = 'Refresh All Data';
-                document.getElementById('refreshAllButton').disabled = false;
-            }
+        document.getElementById('refreshAllButton').addEventListener('click', () => {
+            loadStockName();
+            loadAllSheetData();   
         });
+
     </script>
 </body>
 </html>
