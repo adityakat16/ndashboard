@@ -602,9 +602,11 @@
         
 
         // Event listener for the refresh all data button
-        document.getElementById('refreshAllButton').addEventListener('click', () => {
-            loadAllSheetData();     // Refresh the tables
-            loadStockName();        // Refresh the stock name from sheet
+        document.getElementById('refreshAllButton').addEventListener('click', async () => {
+            await loadAllSheetData(); // Refresh all tables first
+            setTimeout(() => {
+                loadStockName(); // Then refresh the stock name
+            }, 1000); // 1s delay
         });
 
 
