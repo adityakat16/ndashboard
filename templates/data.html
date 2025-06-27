@@ -547,7 +547,6 @@
             }
 
             tableContainer.appendChild(table);
-            statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
         }
 
         /**
@@ -574,7 +573,9 @@
 
                 // Render Overall data
                 if (overallResponse.status === 'ready') {
-                    renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
+                    renderTable('overallTableContainer', overallResponse.data
+                              //  ,'Overall Data'
+                    );
                 } else {
                     document.getElementById('overallStatusMessage').textContent = overallResponse.message;
                     showMessage(overallResponse.message);
