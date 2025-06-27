@@ -32,7 +32,7 @@
             flex: 1; /* Retained flex: 1 for left panel */
             min-width: 400px; /* Minimum width for the left panel */
             background-color: #2c2c2c; /* Darker panel background */
-            padding: 30px;
+            padding: 20px; /* Reduced padding for more space */
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             display: flex;
@@ -47,7 +47,7 @@
         }
         .right-panel > div {
             background-color: #2c2c2c; /* Darker panel background for sub-sections */
-            padding: 30px;
+            padding: 20px; /* Reduced padding for more space */
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             flex: 1; /* Each takes equal vertical space */
@@ -65,7 +65,7 @@
         }
         h2 {
             color: #66bb6a; /* Lighter green for sub-headers */
-            margin-bottom: 15px;
+            margin-bottom: 5px; /* Reduced margin-bottom for h2 to save space */
             font-size: 1.75rem;
             font-weight: 600;
             text-align: center;
@@ -74,7 +74,8 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 10px; /* Adjusted margin-top to 10px */
+            margin-top: 10px; /* Retained 10px margin-top */
+            margin-bottom: 0; /* Ensured no extra margin below the table */
             border-radius: 10px;
             overflow: hidden; /* Ensures border-radius is applied correctly */
             table-layout: fixed; /* Set table-layout to fixed for all tables by default */
@@ -146,14 +147,11 @@
         }
         /* Override specific first/second child for overallTableContainer */
         #overallTableContainer td:first-child,
-        #overallTableContainer th:first-child {
-            font-size: 14px !important; /* Retained font size */
-            white-space: nowrap; /* Ensure nowrap for first column */
-        }
         #overallTableContainer td:nth-child(2),
+        #overallTableContainer th:first-child,
         #overallTableContainer th:nth-child(2) {
             font-size: 14px !important; /* Retained font size */
-            white-space: nowrap; /* Ensure nowrap for second column */
+            white-space: nowrap; /* Ensure nowrap for first and second column */
         }
 
 
@@ -190,34 +188,7 @@
         }
 
 
-        .message-box {
-            background-color: #3a3a3a;
-            border: 1px solid #555;
-            color: #f0f0f0;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            text-align: center;
-            min-width: 300px;
-            display: none; /* Hide the message box by default */
-        }
-        .message-box button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s ease;
-        }
-        .message-box button:hover {
-            background-color: #45a049;
-        }
+        /* Removed .message-box and related button styles */
 
         /* Back button styling */
         .back-button {
@@ -259,7 +230,8 @@
 
         .status-message {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 5px; /* Reduced margin-top for status messages */
+            margin-bottom: 10px; /* Added margin-bottom for status messages */
             font-size: 1.1rem;
             color: #ccc;
         }
@@ -313,7 +285,6 @@
             }
         }
     </style>
-    <!-- Firebase SDK (Standard for Canvas Apps) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -361,49 +332,35 @@
 
         // Removed showMessage and closeMessage functions as per request
 
-        window.closeMessage = closeMessage; // Make it globally accessible for the button - REMOVED
-
     </script>
 </head>
 <body>
-    <!-- Removed the entire message-box div -->
-
     <a href="index.html" class="back-button">
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 id="mainTitle">KATTI INVESTMENT CORPORATION - ANALYSIS OF </h1>
+    <h1 id="mainTitle">KATTI INVESTMENT CORPORATION - ANALYSIS</h1>
 
     <div class="main-content-wrapper">
-        <!-- Left Panel: Overall Worksheet Data -->
         <div class="left-panel">
+            <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
             <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
             <div id="overallTableContainer" class="flex-grow">
-                <!-- Overall table will be loaded here by JavaScript -->
-            </div>
+                </div>
         </div>
 
-        <!-- Right Panel: Annual and Quarterly Worksheets -->
         <div class="right-panel">
-            <!-- Annual Statistics Section -->
             <div>
-                <!-- Removed h2 for Annual Statistics -->
                 <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message"></div> <!-- Keep for spinner logic -->
-                <div id="annualTableContainer" class="flex-grow">
-                    <!-- Annual table will be loaded here by JavaScript -->
-                </div>
+                <div id="annualStatusMessage" class="status-message"></div> <div id="annualTableContainer" class="flex-grow">
+                    </div>
             </div>
 
-            <!-- Quarterly Statistics Section -->
             <div>
-                <!-- Removed h2 for Quarterly Statistics -->
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message"></div> <!-- Keep for spinner logic -->
-                <div id="quarterlyTableContainer" class="flex-grow">
-                    <!-- Quarterly table will be loaded here by JavaScript -->
-                </div>
+                <div id="quarterlyStatusMessage" class="status-message"></div> <div id="quarterlyTableContainer" class="flex-grow">
+                    </div>
             </div>
         </div>
     </div>
@@ -450,10 +407,11 @@
             // Clear previous content
             tableContainer.innerHTML = '';
             if (loadingSpinner) loadingSpinner.style.display = 'none'; // Hide spinner
-            // Removed: if (statusMessage) statusMessage.textContent = ''; 
+            if (statusMessage) statusMessage.textContent = ''; // Clear status message
 
             if (!sheetData || sheetData.length === 0) {
-                // if (statusMessage) statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`; // Removed
+                // If no data, show a message (optional, but good for debugging)
+                // if (statusMessage) statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
                 return;
             }
 
@@ -487,7 +445,7 @@
                         tr.appendChild(tdValue);
                         tbody.appendChild(tr);
 
-                        // Check if this row contains the stock name (case-insensitive and trim spaces)
+                        // Check if this row contains the stock name (case-insensitive and trimmed)
                         if (rowData[0] && typeof rowData[0] === 'string' && rowData[0].trim().toLowerCase() === 'stock name' && rowData[1]) {
                             stockName = String(rowData[1]).trim(); // Ensure rowData[1] is treated as string
                         }
@@ -501,6 +459,7 @@
                     if (stockName) {
                         mainTitleElement.textContent = `KATTI INVESTMENT CORPORATION - ANALYSIS OF ${stockName}`;
                     } else {
+                        // If stockName is not found, keep the default title
                         mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS`;
                     }
                 }
@@ -604,27 +563,23 @@
                 if (overallResponse.status === 'ready') {
                     renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
                 } else {
-                    // Removed showMessage here, relying on console.error
-                    console.error(overallResponse.message);
+                    console.error(`Error loading Overall Data: ${overallResponse.message}`);
                 }
 
                 if (annualResponse.status === 'ready') {
                     renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
                 } else {
-                    // Removed showMessage here, relying on console.error
-                    console.error(annualResponse.message);
+                    console.error(`Error loading Annual Data: ${annualResponse.message}`);
                 }
 
                 if (quarterlyResponse.status === 'ready') {
                     renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
                 } else {
-                    // Removed showMessage here, relying on console.error
-                    console.error(quarterlyResponse.message);
+                    console.error(`Error loading Quarterly Data: ${quarterlyResponse.message}`);
                 }
 
             } catch (error) {
                 console.error("Error loading all sheet data:", error);
-                // Removed showMessage here
             } finally {
                 // Hide all spinners regardless of success/failure
                 if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'none';
