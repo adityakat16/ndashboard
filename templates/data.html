@@ -74,7 +74,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 20px;
+            margin-top: 10px; /* Adjusted margin-top to 10px */
             border-radius: 10px;
             overflow: hidden; /* Ensures border-radius is applied correctly */
             table-layout: fixed; /* Set table-layout to fixed for all tables by default */
@@ -184,7 +184,6 @@
         }
 
         /* Ensure no horizontal scrolling on the table containers themselves */
-        /* Re-added general overflow-x: hidden for all relevant flex-grow divs */
         .flex-grow { /* Targets all flex-grow elements, assuming they are the table containers */
             overflow-x: hidden; /* Prevent horizontal scrolling */
             overflow-y: auto; /* Allow vertical scrolling for content */
@@ -205,6 +204,7 @@
             z-index: 1000;
             text-align: center;
             min-width: 300px;
+            display: none; /* Hide the message box by default */
         }
         .message-box button {
             background-color: #4CAF50;
@@ -353,42 +353,30 @@
                 loadAllSheetData();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
-                showMessage('Error initializing application. Please try again.');
+                // No showMessage call here, as per request
                 // Even if Firebase fails, try to load data
                 loadAllSheetData();
             }
         };
 
-        function showMessage(message) {
-            const messageBox = document.getElementById('messageBox');
-            const messageText = document.getElementById('messageText');
-            messageText.textContent = message;
-            messageBox.style.display = 'block';
-        }
+        // Removed showMessage and closeMessage functions as per request
 
-        function closeMessage() {
-            document.getElementById('messageBox').style.display = 'none';
-        }
+        window.closeMessage = closeMessage; // Make it globally accessible for the button - REMOVED
 
-        window.closeMessage = closeMessage; // Make it globally accessible for the button
     </script>
 </head>
 <body>
-    <div class="message-box" id="messageBox">
-        <p id="messageText"></p>
-        <button onclick="closeMessage()">OK</button>
-    </div>
+    <!-- Removed the entire message-box div -->
 
     <a href="index.html" class="back-button">
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 id="mainTitle">KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
+    <h1 id="mainTitle">KATTI INVESTMENT CORPORATION - ANALYSIS OF </h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
         <div class="left-panel">
-            <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
             <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
             <div id="overallTableContainer" class="flex-grow">
@@ -402,7 +390,7 @@
             <div>
                 <!-- Removed h2 for Annual Statistics -->
                 <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
+                <div id="annualStatusMessage" class="status-message"></div> <!-- Keep for spinner logic -->
                 <div id="annualTableContainer" class="flex-grow">
                     <!-- Annual table will be loaded here by JavaScript -->
                 </div>
@@ -412,7 +400,7 @@
             <div>
                 <!-- Removed h2 for Quarterly Statistics -->
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
+                <div id="quarterlyStatusMessage" class="status-message"></div> <!-- Keep for spinner logic -->
                 <div id="quarterlyTableContainer" class="flex-grow">
                     <!-- Quarterly table will be loaded here by JavaScript -->
                 </div>
@@ -462,10 +450,10 @@
             // Clear previous content
             tableContainer.innerHTML = '';
             if (loadingSpinner) loadingSpinner.style.display = 'none'; // Hide spinner
-            if (statusMessage) statusMessage.textContent = ''; // Clear status message
+            // Removed: if (statusMessage) statusMessage.textContent = ''; 
 
             if (!sheetData || sheetData.length === 0) {
-                if (statusMessage) statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
+                // if (statusMessage) statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`; // Removed
                 return;
             }
 
@@ -499,9 +487,9 @@
                         tr.appendChild(tdValue);
                         tbody.appendChild(tr);
 
-                        // Check if this row contains the stock name
-                        if (rowData[0] && rowData[0].trim().toLowerCase() === 'stock name' && rowData[1]) {
-                            stockName = rowData[1].trim();
+                        // Check if this row contains the stock name (case-insensitive and trim spaces)
+                        if (rowData[0] && typeof rowData[0] === 'string' && rowData[0].trim().toLowerCase() === 'stock name' && rowData[1]) {
+                            stockName = String(rowData[1]).trim(); // Ensure rowData[1] is treated as string
                         }
                     }
                 });
@@ -511,7 +499,7 @@
                 const mainTitleElement = document.getElementById('mainTitle');
                 if (mainTitleElement) {
                     if (stockName) {
-                        mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS OF ${stockName}`;
+                        mainTitleElement.textContent = `KATTI INVESTMENT CORPORATION - ANALYSIS OF ${stockName}`;
                     } else {
                         mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS`;
                     }
@@ -592,14 +580,17 @@
          */
         async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
+            // Overall Data
             if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'block';
             if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...';
             
+            // Annual Statistics
             if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'block';
-            if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...';
+            // Removed setting text for annualStatusMessage, as per request
             
+            // Quarterly Statistics
             if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
-            if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...';
+            // Removed setting text for quarterlyStatusMessage, as per request
 
             document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
@@ -613,30 +604,34 @@
                 if (overallResponse.status === 'ready') {
                     renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
                 } else {
-                    showMessage(overallResponse.message);
+                    // Removed showMessage here, relying on console.error
+                    console.error(overallResponse.message);
                 }
 
                 if (annualResponse.status === 'ready') {
                     renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
                 } else {
-                    showMessage(annualResponse.message);
+                    // Removed showMessage here, relying on console.error
+                    console.error(annualResponse.message);
                 }
 
                 if (quarterlyResponse.status === 'ready') {
                     renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
                 } else {
-                    showMessage(quarterlyResponse.message);
+                    // Removed showMessage here, relying on console.error
+                    console.error(quarterlyResponse.message);
                 }
 
             } catch (error) {
                 console.error("Error loading all sheet data:", error);
-                showMessage("Failed to load some or all sheet data. Please check your connection or try again.");
+                // Removed showMessage here
             } finally {
                 // Hide all spinners regardless of success/failure
                 if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'none';
                 if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'none';
                 if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
 
+                // Ensure status messages are cleared even if not explicitly set initially
                 if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
                 if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
                 if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
