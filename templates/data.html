@@ -78,8 +78,9 @@
             border-radius: 10px;
             word-break:break-word;
             overflow: hidden;
-            table-layout: fixed;
+            table-layout: auto;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size:0.75rem;
         }
         th, td {
             padding: 4px 5px;
@@ -242,6 +243,9 @@
             .left-panel, .right-panel, .right-panel > div {
                 width: 100%;
                 min-width: unset; /* Remove min-width on small screens */
+            }
+            table {
+                font-size: 0.65rem;
             }
         }
     </style>
