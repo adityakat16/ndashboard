@@ -76,12 +76,14 @@
             border-spacing: 0;
             margin-top: 20px;
             border-radius: 10px;
+            word-break:break-word;
             overflow: hidden;
+            table-layout: auto;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size:0.75rem;
         }
         th, td {
-            /* Base padding for all tables */
-            padding: 5px 7px;
+            padding: 4px 5px;
             text-align: left;
             border: 1px solid #3a3a3a; /* Darker border for cells */
             color: #f0f0f0; /* Light text for table content */
@@ -126,49 +128,18 @@
         td.status-in-stock, td.status-low-stock, td.status-out-of-stock {
             font-weight: 600;
             border-radius: 5px;
-            padding: 5px 8px; /* Matched general padding */
+            padding: 8px 12px;
             text-align: center;
         }
 
-        /* --- Specific Styles for Left Panel Table (Overall) - Bigger and More Spacious --- */
-        .left-panel table th,
-        .left-panel table td {
-            font-size: 1.05rem; /* Bigger font size for left panel */
-            padding: 15px 25px; /* More spacious padding for left panel */
-        }
-        .left-panel table {
-            table-layout: auto; /* Allow columns to size based on content, better for 2 columns */
-            min-width: 100%; /* Ensure it takes at least 100% of container */
-        }
-
-
-        /* --- Specific Styles for Right Panel Tables (Annual/Quarterly) - Even Smaller and Single Line --- */
-        .right-panel table {
-            table-layout: fixed; /* Fix table layout for consistent column widths */
-            width: 100%; /* Ensure it fills container */
-        }
+        /* --- New/Modified Styles for Right Panel Tables --- */
         .right-panel table th,
         .right-panel table td {
-            font-size: 0.4rem; /* Even smaller font size */
-            padding: 0px 1px; /* Further reduced padding */
-            white-space: nowrap; /* Force content into single line */
-            overflow: hidden; /* Hide overflowing text */
-            text-overflow: ellipsis; /* Add ellipsis for hidden text */
+            font-size: 0.85rem; /* Smaller font size */
+            padding: 8px 10px; /* Reduced padding */
         }
-        /* Adjust width of the first two columns (STOCK, PARAMETER) in right panels */
-        /* All cells within .right-panel table now have white-space: nowrap; */
-        .right-panel table th:nth-child(1),
-        .right-panel table td:nth-child(1) {
-            width: 50px; /* Adjusted fixed width for stock symbol */
-        }
-        .right-panel table th:nth-child(2),
-        .right-panel table td:nth-child(2) {
-            width: 80px; /* Adjusted fixed width for parameter names */
-        }
-        
-        /* Ensure the containers allow horizontal scrolling if absolutely necessary, but styling aims to prevent its frequent use */
-        .flex-grow.overflow-x-auto {
-            overflow-x: auto; /* Kept for safety, but styling aims to prevent its frequent use */
+        .right-panel table {
+            min-width: unset; /* Allow tables to shrink more if necessary */
         }
 
 
@@ -273,6 +244,9 @@
                 width: 100%;
                 min-width: unset; /* Remove min-width on small screens */
             }
+            table {
+                font-size: 0.65rem;
+            }
         }
     </style>
     <!-- Firebase SDK (Standard for Canvas Apps) -->
@@ -345,7 +319,7 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 style="font-size: 35px">KATTI INVESTMENT CORPORATION - ANALYSIS</h1>
+    <h1 style="font-size:35px;"><center>KATTI INVESTMENT CORPORATION</center></h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
@@ -353,10 +327,248 @@
             <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
             <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
-            <div id="overallTableContainer" class="flex-grow overflow-x-auto">
+            <div id="overallTableContainer" class="flex-grow overflow-x-auto" style="font-size: 24px; padding: 24px; width: 100%;">
                 <!-- Overall table will be loaded here by JavaScript -->
             </div>
         </div>
 
         <!-- Right Panel: Annual and Quarterly Worksheets -->
-        <div class="right-pane
+        <div class="right-panel">
+            <!-- Annual Statistics Section -->
+            <div>
+                <h2>Annual Statistics</h2>
+                <div id="annualLoadingSpinner" class="spinner"></div>
+                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
+                <div id="annualTableContainer" class="flex-grow overflow-x-auto" style="font-size: xx-small">
+                    <!-- Annual table will be loaded here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Quarterly Statistics Section -->
+            <div>
+                <h2>Quarterly Statistics</h2>
+                <div id="quarterlyLoadingSpinner" class="spinner"></div>
+                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
+                <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto" style="font-size: xx-small">
+                    <!-- Quarterly table will be loaded here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="refreshAllButton" class="refresh-button">Refresh All Data</button>
+
+    <script>
+        /**
+         * Fetches sheet data from the backend API.
+         * @param {string} sheetName - The name of the worksheet to fetch data from.
+         * @param {string} dataRange - The range in A1 notation (e.g., 'A:Z', 'A1:E10').
+         * @returns {Promise<Object>} A promise that resolves to an object containing status and data.
+         */
+        async function fetchSheetData(sheetName, dataRange) {
+            try {
+                const url = `/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
+                console.log(`Fetching data from: ${url}`);
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    return { status: 'ready', data: data.values, sheetName: sheetName };
+                } else {
+                    return { status: 'error', message: data.message || `Failed to fetch data from backend for ${sheetName}.`, sheetName: sheetName };
+                }
+            } catch (error) {
+                console.error(`Error fetching sheet data for ${sheetName}:`, error);
+                return { status: 'error', message: `Network error or server unavailable for ${sheetName}.`, sheetName: sheetName };
+            }
+        }
+
+        /**
+         * Renders a single table into a specified container.
+         * @param {string} containerId - The ID of the div where the table should be rendered.
+         * @param {Array<Array<string>>} sheetData - The 2D array of data from the sheet.
+         * @param {string} sheetTitle - The title for the table (e.g., "Overall Data").
+         */
+        function renderTable(containerId, sheetData, sheetTitle) {
+            const tableContainer = document.getElementById(containerId);
+            const statusMessage = document.getElementById(containerId.replace('TableContainer', 'StatusMessage'));
+            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner'));
+
+            // Clear previous content
+            tableContainer.innerHTML = '';
+            loadingSpinner.style.display = 'none'; // Hide spinner
+            statusMessage.textContent = ''; // Clear status message
+
+            if (!sheetData || sheetData.length === 0) {
+                statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.classList.add('min-w-full');
+
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // --- Special handling for "Overall Data" (two-column: Parameter | Value) ---
+            if (containerId === 'overallTableContainer') {
+                const headerRow = document.createElement('tr');
+                let thParam = document.createElement('th');
+                thParam.textContent = 'Parameter';
+                headerRow.appendChild(thParam);
+                let thValue = document.createElement('th');
+                thValue.textContent = 'Value';
+                headerRow.appendChild(thValue);
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                sheetData.forEach(rowData => {
+                    if (rowData.length >= 2) { // Ensure there are at least two columns
+                        const tr = document.createElement('tr');
+                        const tdParam = document.createElement('td');
+                        tdParam.textContent = rowData[0] || '';
+                        tr.appendChild(tdParam);
+                        const tdValue = document.createElement('td');
+                        tdValue.textContent = rowData[1] || '';
+                        tr.appendChild(tdValue);
+                        tbody.appendChild(tr);
+                    }
+                });
+                table.appendChild(tbody);
+
+            } else {
+                // --- General handling for Annual, Quarterly, and other tables (dynamic columns) ---
+                let dataStartIndex = 0;
+                // Check if the first row is a potential merged header
+                if (sheetData[0] && sheetData[0].length === 1 && sheetData[0][0]) {
+                    const mergedHeaderCell = document.createElement('th');
+                    // Colspan based on the length of the row expected to be column headers
+                    mergedHeaderCell.colSpan = sheetData[1] ? sheetData[1].length : sheetData[0].length;
+                    mergedHeaderCell.textContent = sheetData[0][0];
+                    mergedHeaderCell.classList.add('merged-header');
+                    const headerRow1 = document.createElement('tr');
+                    headerRow1.appendChild(mergedHeaderCell);
+                    thead.appendChild(headerRow1);
+                    dataStartIndex = 1; // Move past the merged header
+                }
+
+                // Process the actual column headers (the row after the potential merged header or the first row)
+                if (sheetData[dataStartIndex] && Array.isArray(sheetData[dataStartIndex])) {
+                    const headerRow = document.createElement('tr');
+                    sheetData[dataStartIndex].forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    dataStartIndex++; // Move past the column headers
+                } else {
+                    console.warn(`No column headers found for ${sheetTitle}.`);
+                }
+                table.appendChild(thead);
+
+                // Create table body from remaining data rows
+                for (let i = dataStartIndex; i < sheetData.length; i++) {
+                    const rowData = sheetData[i];
+                    const tr = document.createElement('tr');
+
+                    if (!Array.isArray(rowData)) {
+                        console.warn(`Skipping malformed row in ${sheetTitle}:`, rowData);
+                        continue;
+                    }
+
+                    rowData.forEach((cellData, colIndex) => {
+                        const td = document.createElement('td');
+                        td.textContent = cellData || '';
+
+                        // Apply colors based on 'Status' column (if applicable and header found)
+                        let statusColIndex = -1;
+                        if (sheetData[dataStartIndex - 1] && Array.isArray(sheetData[dataStartIndex - 1])) {
+                            statusColIndex = sheetData[dataStartIndex - 1].indexOf('Status');
+                        }
+
+                        if (statusColIndex !== -1 && colIndex === statusColIndex) {
+                            if (cellData === 'In Stock') {
+                                td.classList.add('status-in-stock');
+                            } else if (cellData === 'Low Stock') {
+                                td.classList.add('status-low-stock');
+                            } else if (cellData === 'Out of Stock') {
+                                td.classList.add('status-out-of-stock');
+                            }
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+            }
+
+            tableContainer.appendChild(table);
+            statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
+        }
+
+        /**
+         * Loads data from all specified sheets concurrently and renders them.
+         */
+        async function loadAllSheetData() {
+            // Show spinners and update status messages for all panels
+            document.getElementById('overallLoadingSpinner').style.display = 'block';
+            document.getElementById('annualLoadingSpinner').style.display = 'block';
+            document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
+
+            document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...';
+            document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...';
+            document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...';
+
+            document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
+
+            try {
+                const [overallResponse, annualResponse, quarterlyResponse] = await Promise.all([
+                    fetchSheetData('Overall', 'A:B'), // Fetch 'overall' sheet, assuming Parameter & Value are in A:B
+                    fetchSheetData('Annual Data', 'A:Z'),   // Fetch entire 'annual' sheet, all columns for dynamic data
+                    fetchSheetData('Quarterly Data', 'A:Z') // Fetch entire 'quarterly' sheet, all columns for dynamic data
+                ]);
+
+                // Render Overall data
+                if (overallResponse.status === 'ready') {
+                    renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
+                } else {
+                    document.getElementById('overallStatusMessage').textContent = overallResponse.message;
+                    showMessage(overallResponse.message);
+                }
+
+                // Render Annual data
+                if (annualResponse.status === 'ready') {
+                    renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
+                } else {
+                    document.getElementById('annualStatusMessage').textContent = annualResponse.message;
+                    showMessage(annualResponse.message);
+                }
+
+                // Render Quarterly data
+                if (quarterlyResponse.status === 'ready') {
+                    renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
+                } else {
+                    document.getElementById('quarterlyStatusMessage').textContent = quarterlyResponse.message;
+                    showMessage(quarterlyResponse.message);
+                }
+
+            } catch (error) {
+                console.error("Error loading all sheet data:", error);
+                showMessage("Failed to load some or all sheet data. Please check your connection or try again.");
+            } finally {
+                // Hide all spinners regardless of success/failure
+                document.getElementById('overallLoadingSpinner').style.display = 'none';
+                document.getElementById('annualLoadingSpinner').style.display = 'none';
+                document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
+                document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
+            }
+        }
+
+        // Event listener for the refresh all data button
+        document.getElementById('refreshAllButton').addEventListener('click', loadAllSheetData);
+
+        // Initial load is handled by window.onload
+    </script>
+</body>
+</html>
