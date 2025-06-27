@@ -21,15 +21,15 @@
         }
         .main-content-wrapper {
             display: flex; /* Use flexbox for the main two-column layout */
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            flex-wrap: nowrap; /* Allow wrapping on smaller screens */
             gap: 20px; /* Space between columns */
             width: 100%;
-            max-width: 1200px; /* Max width for the entire dashboard */
+            max-width: 1600px; /* Max width for the entire dashboard */
             margin-top: 20px;
             justify-content: center; /* Center content horizontally */
         }
         .left-panel {
-            flex: 1; /* Takes more space on wider screens */
+            flex: 0.5; /* Takes more space on wider screens */
             min-width: 400px; /* Minimum width for the left panel */
             background-color: #2c2c2c; /* Darker panel background */
             padding: 30px;
@@ -39,7 +39,7 @@
             flex-direction: column;
         }
         .right-panel {
-            flex: 3; /* Takes less space than left */
+            flex: 4; /* Takes less space than left */
             min-width: 300px; /* Minimum width for the right panel */
             display: flex;
             flex-direction: column;
@@ -78,22 +78,42 @@
             border-radius: 10px;
             word-break:break-word;
             overflow: hidden;
-            table-layout: auto;
+            table-layout: fixed;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-size:0.75rem;
         }
         th, td {
-            padding: 4px 5px;
+            padding: 4px 4px;
             text-align: left;
             border: 1px solid #3a3a3a; /* Darker border for cells */
             color: #f0f0f0; /* Light text for table content */
+            white-space: nowrap;
+            text-overflow: ellipsis;           
         }
+        #annualTableContainer,
+        #annualTableContainer td,
+        #annualTableContainer th{
+            font-size: 10px;
+        }
+        #quarterlyTableContainer,
+        #quarterlyTableContainer td,
+        #quarterlyTableContainer th{
+            font-size: 10px;
+        }
+        td:first-child,
+        th:first-child {
+            font-size: 11px !important;
+            white-space: nowrap;      /* allows wrapping */
+            word-break: break-word;
+            width: 102px;
+        }
+
         th {
             background-color: #4CAF50; /* Green header from your theme */
             color: white;
             font-weight: 600;
             text-transform: uppercase;
             border: 1px solid #4CAF50; /* Matching border */
+            
         }
         tr:nth-child(even) td {
             background-color: #333333; /* Slightly lighter dark for even rows */
@@ -233,6 +253,29 @@
             background-color: #434c9c;
             transform: translateY(-2px);
         }
+        #overallTableContainer table {
+            width: 100%;
+            table-layout: auto;
+            font-size: 14px;
+            border-collapse: collapse;
+            border-radius: 10px;
+        }
+
+        #overallTableContainer td,
+        #overallTableContainer th {
+            padding: 16px 24px;
+            min-width: fit-content;
+            text-align: left;
+            white-space: nowrap;
+        }
+        #overallTableContainer td:first-child,
+        #overallTableContainer th:first-child {
+            font-size: 14px !important;
+        }
+        #overallTableContainer td:second-child,
+        #overallTableContainer th:second-child {
+            font-size: 14px !important;
+        }
 
         /* Media queries for responsiveness */
         @media (max-width: 768px) {
@@ -327,8 +370,8 @@
             <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
             <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
-            <div id="overallTableContainer" class="flex-grow overflow-x-auto" style="font-size: 24px; padding: 24px; width: 100%;">
-                <!-- Overall table will be loaded here by JavaScript -->
+            <div id="overallTableContainer" class="flex-grow overflow-x-auto">
+                <!-- overall table will be loaded here by JavaScript -->
             </div>
         </div>
 
@@ -339,7 +382,7 @@
                 <h2>Annual Statistics</h2>
                 <div id="annualLoadingSpinner" class="spinner"></div>
                 <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
-                <div id="annualTableContainer" class="flex-grow overflow-x-auto" style="font-size: xx-small">
+                <div id="annualTableContainer" class="flex-grow overflow-x-auto">
                     <!-- Annual table will be loaded here by JavaScript -->
                 </div>
             </div>
@@ -349,7 +392,7 @@
                 <h2>Quarterly Statistics</h2>
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
                 <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
-                <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto" style="font-size: xx-small">
+                <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto">
                     <!-- Quarterly table will be loaded here by JavaScript -->
                 </div>
             </div>
