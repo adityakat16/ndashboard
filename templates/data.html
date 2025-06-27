@@ -60,7 +60,7 @@
             margin-bottom: 25px;
             font-size: 35px; /* Directly use px value */
             font-weight: 700;
-            text-align: center;
+            text-align: center; /* Ensures it's centered */
             width: 100%; /* Ensure h1 spans full width */
         }
         h2 {
@@ -184,8 +184,10 @@
         }
 
         /* Ensure no horizontal scrolling on the table containers themselves */
+        /* Re-added general overflow-x: hidden for all relevant flex-grow divs */
         .flex-grow { /* Targets all flex-grow elements, assuming they are the table containers */
             overflow-x: hidden; /* Prevent horizontal scrolling */
+            overflow-y: auto; /* Allow vertical scrolling for content */
         }
 
 
@@ -201,7 +203,6 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000;
-            display: none;
             text-align: center;
             min-width: 300px;
         }
@@ -241,8 +242,27 @@
             margin-right: 8px;
         }
 
-        /* Removed spinner and status message styles as they are no longer used in HTML */
+        .spinner {
+            border: 8px solid #444; /* Light grey */
+            border-top: 8px solid #4CAF50; /* Green */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto; /* Centered with margin */
+            display: block; /* Shown by default until data loads */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
+        .status-message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
         .refresh-button {
             background-color: #5a67d8; /* Blue-grey for refresh */
             color: white;
@@ -363,13 +383,14 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1>KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
+    <h1 id="mainTitle">KRATTI INVESTMENT CORPORATION - ANALYSIS</h1>
 
     <div class="main-content-wrapper">
         <!-- Left Panel: Overall Worksheet Data -->
         <div class="left-panel">
             <h2>Overall Data</h2>
-            <!-- Removed loading spinner and status message -->
+            <div id="overallLoadingSpinner" class="spinner"></div>
+            <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
             <div id="overallTableContainer" class="flex-grow">
                 <!-- Overall table will be loaded here by JavaScript -->
             </div>
@@ -379,8 +400,9 @@
         <div class="right-panel">
             <!-- Annual Statistics Section -->
             <div>
-                <h2>Annual Statistics</h2>
-                <!-- Removed loading spinner and status message -->
+                <!-- Removed h2 for Annual Statistics -->
+                <div id="annualLoadingSpinner" class="spinner"></div>
+                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
                 <div id="annualTableContainer" class="flex-grow">
                     <!-- Annual table will be loaded here by JavaScript -->
                 </div>
@@ -388,8 +410,9 @@
 
             <!-- Quarterly Statistics Section -->
             <div>
-                <h2>Quarterly Statistics</h2>
-                <!-- Removed loading spinner and status message -->
+                <!-- Removed h2 for Quarterly Statistics -->
+                <div id="quarterlyLoadingSpinner" class="spinner"></div>
+                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
                 <div id="quarterlyTableContainer" class="flex-grow">
                     <!-- Quarterly table will be loaded here by JavaScript -->
                 </div>
@@ -433,19 +456,16 @@
          */
         function renderTable(containerId, sheetData, sheetTitle) {
             const tableContainer = document.getElementById(containerId);
-            // FIX: Corrected the access method for statusMessage ID
+            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner'));
             const statusMessage = document.getElementById(containerId.replace('TableContainer', 'StatusMessage'));
-            const loadingSpinner = document.getElementById(containerId.replace('TableContainer', 'LoadingSpinner')); /* This will now be null as element is removed, but won't cause error */
-
 
             // Clear previous content
             tableContainer.innerHTML = '';
-            // REMOVED: loadingSpinner.style.display = 'none';
-            // REMOVED: statusMessage.textContent = ''; 
+            if (loadingSpinner) loadingSpinner.style.display = 'none'; // Hide spinner
+            if (statusMessage) statusMessage.textContent = ''; // Clear status message
 
             if (!sheetData || sheetData.length === 0) {
-                // Keep this line for cases where data is genuinely empty
-                // statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`; 
+                if (statusMessage) statusMessage.textContent = `No data found in the ${sheetTitle.toLowerCase()} sheet.`;
                 return;
             }
 
@@ -467,6 +487,7 @@
                 thead.appendChild(headerRow);
                 table.appendChild(thead);
 
+                let stockName = ''; // Variable to store stock name
                 sheetData.forEach(rowData => {
                     if (rowData.length >= 2) { // Ensure there are at least two columns
                         const tr = document.createElement('tr');
@@ -477,9 +498,24 @@
                         tdValue.textContent = rowData[1] || '';
                         tr.appendChild(tdValue);
                         tbody.appendChild(tr);
+
+                        // Check if this row contains the stock name
+                        if (rowData[0] && rowData[0].trim().toLowerCase() === 'stock name' && rowData[1]) {
+                            stockName = rowData[1].trim();
+                        }
                     }
                 });
                 table.appendChild(tbody);
+
+                // Update the main title after rendering the overall table
+                const mainTitleElement = document.getElementById('mainTitle');
+                if (mainTitleElement) {
+                    if (stockName) {
+                        mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS OF ${stockName}`;
+                    } else {
+                        mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS`;
+                    }
+                }
 
             } else {
                 // --- General handling for Annual, Quarterly, and other tables (dynamic columns) ---
@@ -549,14 +585,22 @@
             }
 
             tableContainer.appendChild(table);
-            // REMOVED: statusMessage.textContent = `Data loaded successfully from ${sheetTitle}!`;
         }
 
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
         async function loadAllSheetData() {
-            // Removed showing spinners and updating status messages from here
+            // Show spinners and update status messages for all panels
+            if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'block';
+            if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...';
+            
+            if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'block';
+            if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...';
+            
+            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
+            if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...';
+
             document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
             try {
@@ -588,7 +632,15 @@
                 console.error("Error loading all sheet data:", error);
                 showMessage("Failed to load some or all sheet data. Please check your connection or try again.");
             } finally {
-                // Removed hiding spinners and status messages from here
+                // Hide all spinners regardless of success/failure
+                if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'none';
+                if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'none';
+                if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
+
+                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
+                if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
+                if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
+
                 document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
             }
         }
