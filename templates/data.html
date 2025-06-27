@@ -345,7 +345,6 @@
         <div class="left-panel">
             <h2>Overall Data</h2>
             <div id="overallLoadingSpinner" class="spinner"></div>
-            <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
             <div id="overallTableContainer" class="flex-grow">
                 </div>
         </div>
@@ -353,13 +352,13 @@
         <div class="right-panel">
             <div>
                 <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message"></div> <div id="annualTableContainer" class="flex-grow">
+                <div id="annualTableContainer" class="flex-grow">
                     </div>
             </div>
 
             <div>
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message"></div> <div id="quarterlyTableContainer" class="flex-grow">
+                <div id="quarterlyTableContainer" class="flex-grow">
                     </div>
             </div>
         </div>
@@ -374,6 +373,16 @@
          * @param {string} dataRange - The range in A1 notation (e.g., 'A:Z', 'A1:E10').
          * @returns {Promise<Object>} A promise that resolves to an object containing status and data.
          */
+        fetch('/get_sheet_data?sheet_name='1pv6iqeAzQzu6eHaB_v46BQ1vsGM6MntUvJ9o7D9iWGI'&range_name=A1:B1')
+            .then(res => res.json())
+            .then(metaData => {
+                 if (metaData.status === 'success' && metaData.values.length > 0) {
+                    const stockSymbol = metaData.values[0][1]; // B1
+                    document.getElementById('pageTitle').textContent =
+                        `KATTI INVESTMENT CORPORATION – ANALYSIS OF ${stockSymbol}`;
+                }
+            });
+
         async function fetchSheetData(sheetName, dataRange) {
             try {
                 const BASE_API_URL = ''; 
@@ -453,16 +462,7 @@
                 });
                 table.appendChild(tbody);
 
-                // Update the main title after rendering the overall table
-                const mainTitleElement = document.getElementById('mainTitle');
-                if (mainTitleElement) {
-                    if (stockName) {
-                        mainTitleElement.textContent = `KATTI INVESTMENT CORPORATION - ANALYSIS OF ${stockName}`;
-                    } else {
-                        // If stockName is not found, keep the default title
-                        mainTitleElement.textContent = `KRATTI INVESTMENT CORPORATION - ANALYSIS`;
-                    }
-                }
+            
 
             } else {
                 // --- General handling for Annual, Quarterly, and other tables (dynamic columns) ---
@@ -548,6 +548,10 @@
             // Removed setting text for annualStatusMessage, as per request
             
             // Quarterly Statistics
+            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
+            // Removed setting text for quarterlyStatusMessage, as per request
+
+             // Stock Symbol
             if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
             // Removed setting text for quarterlyStatusMessage, as per request
 
