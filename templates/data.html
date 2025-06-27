@@ -369,7 +369,7 @@
         <div class="left-panel">
             <!--<h2>Overall Data</h2> -->
             <div id="overallLoadingSpinner" class="spinner"></div>
-            <div id="overallStatusMessage" class="status-message">Loading Overall data...</div>
+            <!--<div id="overallStatusMessage" class="status-message">Loading Overall data...</div>-->
             <div id="overallTableContainer" class="flex-grow overflow-x-auto">
                 <!-- overall table will be loaded here by JavaScript -->
             </div>
@@ -381,7 +381,7 @@
             <div>
                <!-- <h2>Annual Statistics</h2>-->
                 <div id="annualLoadingSpinner" class="spinner"></div>
-                <div id="annualStatusMessage" class="status-message">Loading Annual data...</div>
+                <!--<div id="annualStatusMessage" class="status-message">Loading Annual data...</div>-->
                 <div id="annualTableContainer" class="flex-grow overflow-x-auto">
                     <!-- Annual table will be loaded here by JavaScript -->
                 </div>
@@ -391,7 +391,7 @@
             <div>
                 <!--<h2>Quarterly Statistics</h2>-->
                 <div id="quarterlyLoadingSpinner" class="spinner"></div>
-                <div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>
+                <!--<div id="quarterlyStatusMessage" class="status-message">Loading Quarterly data...</div>-->
                 <div id="quarterlyTableContainer" class="flex-grow overflow-x-auto">
                     <!-- Quarterly table will be loaded here by JavaScript -->
                 </div>
@@ -552,6 +552,9 @@
         /**
          * Loads data from all specified sheets concurrently and renders them.
          */
+        const stockName = symbol.toUpperCase(); // or from response
+        const titleElement = document.getElementById('pageTitle');
+        titleElement.textContent = `KATTI INVESTMENT CORPORATION – ANALYSIS OF ${symbol}`;
         async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
             document.getElementById('overallLoadingSpinner').style.display = 'block';
