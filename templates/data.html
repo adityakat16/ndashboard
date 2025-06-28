@@ -395,10 +395,9 @@
     <button id="refreshAllButton" class="refresh-button">Refresh All Data</button>
 
     <script>
-        async function fetchSheetData(sheetName, dataRange, stockSymbol = '') { // ADD stockSymbol parameter
+        async function fetchSheetData(sheetName, dataRange) {
             try {
-                const BASE_API_URL = '';
-                // ADD stock_symbol to the URL for your backend to use
+                const BASE_API_URL = ''; 
                 const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
                 console.log(`Fetching data from: ${url}`);
                 const response = await fetch(url);
