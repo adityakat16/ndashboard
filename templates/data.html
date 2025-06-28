@@ -468,6 +468,39 @@
                 });
                 table.appendChild(tbody);
 
+
+                // --- Special handling for "Overall Data" (two-column: Parameter | Value) ---
+            if (containerId === 'projectionsTableContainer') {
+                const headerRow = document.createElement('tr');
+                let thParam = document.createElement('th');
+                thParam.textContent = 'Projections';
+                headerRow.appendChild(thParam);
+                let thValue = document.createElement('th');
+                thValue.textContent = 'Value';
+                headerRow.appendChild(thValue);
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                let stockName = ''; // Variable to store stock name
+                sheetData.forEach(rowData => {
+                    if (rowData.length >= 2) { // Ensure there are at least two columns
+                        const tr = document.createElement('tr');
+                        const tdParam = document.createElement('td');
+                        tdParam.textContent = rowData[0] || '';
+                        tr.appendChild(tdParam);
+                        const tdValue = document.createElement('td');
+                        tdValue.textContent = rowData[1] || '';
+                        tr.appendChild(tdValue);
+                        tbody.appendChild(tr);
+
+                        // Check if this row contains the stock name (case-insensitive and trimmed)
+                        if (rowData[0] && typeof rowData[0] === 'string' && rowData[0].trim().toLowerCase() === 'stock name' && rowData[1]) {
+                            stockName = String(rowData[1]).trim(); // Ensure rowData[1] is treated as string
+                        }
+                    }
+                });
+                table.appendChild(tbody);
+
                 
 
             } else {
@@ -577,10 +610,10 @@
             if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'block';
             
             // Quarterly Statistics
-            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';4
+            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
 
             // Projections Statistics
-            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';4
+            if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'block';
 
             document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
@@ -611,7 +644,7 @@
                 }
 
                 if (projectionsResponse.status === 'ready') {
-                    renderTable('quarterlyTableContainer', projectionsResponse.data, 'Projections Statistics');
+                    renderTable('projectionsTableContainer', projectionsResponse.data, 'Projections Statistics');
                 } else {
                     console.error(`Error loading Projections Data: ${projectionsResponse.message}`);
                 }
