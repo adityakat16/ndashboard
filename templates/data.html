@@ -152,15 +152,21 @@
             font-size: 13px; /* Retained font size */
         }
         #overallTableContainer th,
-        #overallTableContainer td {
-            padding: 15px 18px; /* Retained padding */
+        #overallTableContainer td,
+        #projectionsTableContainer th,
+        #projectionsTableContainer td {
+            padding: 4px 18px; /* Retained padding */
             white-space: nowrap; /* Keep first two columns on one line */
         }
         /* Override specific first/second child for overallTableContainer */
         #overallTableContainer td:first-child,
         #overallTableContainer td:nth-child(2),
         #overallTableContainer th:first-child,
-        #overallTableContainer th:nth-child(2) {
+        #overallTableContainer th:nth-child(2),
+        #projectionsTableContainer th:first-child,
+        #projectionsTableContainer th:nth-child(2),
+        #projectionsTableContainer td:first-child,
+        #projectionsTableContainer td:nth-child(2) {
             font-size: 13px !important; /* Retained font size */
             white-space: nowrap; /* Ensure nowrap for first and second column */
         }
@@ -357,17 +363,20 @@
 
     <h1 id="mainTitle" style="font-size:24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span>
     <div id="dateSpan" style="font-size:14px; font-weight: normal; color: gray;"></div></h1>
+    <!--table entry-->
     <div class="main-content-wrapper">
         <div class="left-panel">
-            <div id="overallLoadingSpinner" class="spinner"></div>
-            
-            <div id="overallTableContainer" class="flex-grow">
+            <div>
+                <div id="overallLoadingSpinner" class="spinner"></div>            
+                <div id="overallTableContainer" class="flex-grow">
                 </div>
+            </div>
 
-            <div id="projectionsLoadingSpinner" class="spinner"></div>
-            
-            <div id="projectionsTableContainer" class="flex-grow">
+            <div>
+                <div id="projectionsLoadingSpinner" class="spinner"></div>            
+                <div id="projectionsTableContainer" class="flex-grow">
                 </div>
+            </div>
         </div>
 
         <div class="right-panel">
