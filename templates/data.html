@@ -325,6 +325,7 @@
                 // Load data for all sheets on initial page load
                 await loadStockName();
                 loadAllSheetData();
+                insertCurrentDate();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 // No showMessage call here, as per request
@@ -345,8 +346,8 @@
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
 
-    <h1 id="mainTitle" style="font-size:24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span></h1>
-
+    <h1 id="mainTitle" style="font-size:24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span>
+    <div id="dateSpan" style="font-size:14px; font-weight: normal; color: gray;"></div></h1>
     <div class="main-content-wrapper">
         <div class="left-panel">
             <div id="overallLoadingSpinner" class="spinner"></div>
@@ -543,6 +544,21 @@
                 console.warn("Stock name not found in Google Sheet.");
             }
         }
+
+        // get date
+        async function insertCurrentDate() {
+            const dateElement = document.getElementById('dateSpan');
+            const today = new Date();
+            const formatted = today.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            if (dateElement) {
+                dateElement.textContent = `As on ${formatted}`;
+            }
+        }    
+
         async function loadAllSheetData() {
             // Show spinners and update status messages for all panels
             // Overall Data
@@ -605,6 +621,7 @@
         // Event listener for the refresh all data button
         document.getElementById('refreshAllButton').addEventListener('click', () => {
             loadStockName();
+            insertCurrentDate();
             loadAllSheetData();   
         });
 
