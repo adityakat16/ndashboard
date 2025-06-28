@@ -399,7 +399,7 @@
             try {
                 const BASE_API_URL = '';
                 // ADD stock_symbol to the URL for your backend to use
-                const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}${stockSymbol ? `&stock_symbol=${encodeURIComponent(stockSymbol)}` : ''}`;
+                const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
                 console.log(`Fetching data from: ${url}`);
                 const response = await fetch(url);
                 const data = await response.json();
