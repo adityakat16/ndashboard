@@ -360,7 +360,7 @@
     <a href="index.html" class="back-button">
         <i class="fas fa-arrow-left"></i> Back to Dashboard
     </a>
-
+    <div id="printSection">
     <h1 id="mainTitle" style="font-size:24px">KATTI INVESTMENT CORPORATION - ANALYSIS OF <span id="stockNameSpan">...</span>
     <div id="dateSpan" style="font-size:14px; font-weight: normal; color: gray;"></div></h1>
     <!--table entry-->
@@ -393,8 +393,10 @@
             </div>
         </div>
     </div>
+    </div>
 
     <button id="refreshAllButton" class="refresh-button">Refresh All Data</button>
+    <button onclick="printData()" class="refresh-button">Print as PDF</button>
 
     <script>
         /**
@@ -699,6 +701,50 @@
             insertCurrentDate();
             loadAllSheetData();   
         });
+        <script>
+    function printData() {
+        const printContents = document.getElementById('printSection').innerHTML;
+        const originalContents = document.body.innerHTML;
+    
+        document.body.innerHTML = `
+            <html>
+            <head>
+                <title>Print Preview</title>
+                <style>
+                    @page {
+                        size: A4 landscape;
+                        margin: 1cm;
+                    }
+                    body {
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                        padding: 1cm;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    th, td {
+                        padding: 6px;
+                        border: 1px solid #ccc;
+                        text-align: left;
+                    }
+                    h1, h2 {
+                        text-align: center;
+                        margin: 0.5em 0;
+                    }
+                </style>
+            </head>
+            <body>
+                ${printContents}
+            </body>
+            </html>
+        `;
+        window.print();
+        window.location.reload(); // reload after print to restore original
+    }
+</script>
+
 
     </script>
 </body>
