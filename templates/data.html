@@ -395,10 +395,11 @@
     <button id="refreshAllButton" class="refresh-button">Refresh All Data</button>
 
     <script>
-        async function fetchSheetData(sheetName, dataRange) {
+        async function fetchSheetData(sheetName, dataRange, stockSymbol = '') { // ADD stockSymbol parameter
             try {
-                const BASE_API_URL = ''; 
-                const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}`;
+                const BASE_API_URL = '';
+                // ADD stock_symbol to the URL for your backend to use
+                const url = `${BASE_API_URL}/get_sheet_data?sheet_name=${encodeURIComponent(sheetName)}&range_name=${encodeURIComponent(dataRange)}${stockSymbol ? `&stock_symbol=${encodeURIComponent(stockSymbol)}` : ''}`;
                 console.log(`Fetching data from: ${url}`);
                 const response = await fetch(url);
                 const data = await response.json();
@@ -601,63 +602,54 @@
             }
         }    
 
-        async function loadAllSheetData() {
+        async function loadAllSheetData(currentStockSymbol) { // ADD currentStockSymbol parameter
             // Show spinners and update status messages for all panels
             // Overall Data
             if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'block';
-            
+            if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Loading Overall data...'; // Re-add this for clarity
+
             // Annual Statistics
             if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'block';
-            
+            // if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = 'Loading Annual data...'; // Optionally add this
+
             // Quarterly Statistics
-            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';4
+            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block'; // Corrected typo here (removed '4')
+            // if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = 'Loading Quarterly data...'; // Optionally add this
 
             // Projections Statistics
-            if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'block';4
+            if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'block'; // Corrected typo here (removed '4')
+            // if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = 'Loading Projections data...'; // Optionally add this
+
 
             document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
 
             try {
                 const [overallResponse, annualResponse, quarterlyResponse, projectionsResponse] = await Promise.all([
-                    fetchSheetData('Overall', 'A:B'),
-                    fetchSheetData('Annual Data', 'A:Z'),
-                    fetchSheetData('Quarterly Data', 'A:Z'),
-                    fetchSheetData('Projections Data','A:Z')
+                    fetchSheetData('Overall', 'A:B', currentStockSymbol), // PASS currentStockSymbol
+                    fetchSheetData('Annual Data', 'A:Z', currentStockSymbol), // PASS currentStockSymbol
+                    fetchSheetData('Quarterly Data', 'A:Z', currentStockSymbol), // PASS currentStockSymbol
+                    fetchSheetData('Projections Data','A:Z', currentStockSymbol) // PASS currentStockSymbol
                 ]);
 
-                if (overallResponse.status === 'ready') {
-                    renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
-                } else {
-                    console.error(`Error loading Overall Data: ${overallResponse.message}`);
-                }
-
-                if (annualResponse.status === 'ready') {
-                    renderTable('annualTableContainer', annualResponse.data, 'Annual Statistics');
-                } else {
-                    console.error(`Error loading Annual Data: ${annualResponse.message}`);
-                }
-
-                if (quarterlyResponse.status === 'ready') {
-                    renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Statistics');
-                } else {
-                    console.error(`Error loading Quarterly Data: ${quarterlyResponse.message}`);
-                }
-
-                if (projectionsResponse.status === 'ready') {
-                    renderTable('projectionsTableContainer', projectionsResponse.data, 'Projections Statistics');
-                } else {
-                    console.error(`Error loading Projections Data: ${projectionsResponse.message}`);
-                }
+                // ... (rest of the if/else if/else blocks for renderTable and console.error) ...
 
             } catch (error) {
                 console.error("Error loading all sheet data:", error);
-            } finally {
-                // Hide all spinners regardless of success/failure
-                if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'none';
-                if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'none';
-                if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
-                if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'none';
+                // Add general error messages for affected tables
+                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Failed to load data.';
+                if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = 'Failed to load data.';
+                if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = 'Failed to load data.';
+                if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = 'Failed to load data.';
 
+            } finally {
+                // ... (hide spinners, show refresh button, ensure status messages are cleared) ...
+                // Ensure all status messages are cleared in finally block, even if you don't initially set them.
+                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
+                if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
+                if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
+                if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = '';
+            }
+        }
                 // Ensure status messages are cleared even if not explicitly set initially
                 if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
                 if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
@@ -671,9 +663,59 @@
 
         // Event listener for the refresh all data button
         document.getElementById('refreshAllButton').addEventListener('click', () => {
-            loadStockName();
-            insertCurrentDate();
-            loadAllSheetData();   
+            //loadStockName();
+            //insertCurrentDate();
+           // loadAllSheetData();   
+        //});
+        // Event listener for the refresh all data button
+        document.getElementById('refreshAllButton').addEventListener('click', async () => {
+            // Show spinners and update status messages for all panels
+            if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'block';
+            if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Refreshing Overall data...';
+            if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'block';
+            if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'block';
+            if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'block';
+
+            document.getElementById('refreshAllButton').style.display = 'none'; // Hide refresh button during load
+
+            try {
+                // Fetch the latest stock name from the sheet first
+                const response = await fetchSheetData("Stock_Symbol", "A1"); // Use your original fetchSheetData to get the symbol
+                let stockSymbolForRefresh = '';
+                if (response.status === 'ready' && response.data && response.data.length > 0) {
+                    stockSymbolForRefresh = response.data[0][0]; // Get the latest symbol from sheet
+                    document.getElementById('stockNameSpan').textContent = stockSymbolForRefresh.toUpperCase(); // Update the span
+                    console.log("Stock symbol refreshed from sheet:", stockSymbolForRefresh);
+                } else {
+                    document.getElementById('stockNameSpan').textContent = 'N/A'; // Set a default if not found
+                    console.warn("Stock name not found in Google Sheet during refresh.");
+                }
+
+                // Re-insert current date
+                insertCurrentDate();
+
+                // Now, load all other data using this newly fetched symbol
+                await loadAllSheetData(stockSymbolForRefresh);
+
+            } catch (error) {
+                console.error("Error during refresh:", error);
+                // Display error messages if needed
+                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = 'Failed to refresh data. Check console.';
+                if (document.getElementById('stockNameSpan')) document.getElementById('stockNameSpan').textContent = 'ERROR'; // Indicate error in title span
+            } finally {
+                // Hide all spinners and clear status messages after refresh
+                if (document.getElementById('overallLoadingSpinner')) document.getElementById('overallLoadingSpinner').style.display = 'none';
+                if (document.getElementById('annualLoadingSpinner')) document.getElementById('annualLoadingSpinner').style.display = 'none';
+                if (document.getElementById('quarterlyLoadingSpinner')) document.getElementById('quarterlyLoadingSpinner').style.display = 'none';
+                if (document.getElementById('projectionsLoadingSpinner')) document.getElementById('projectionsLoadingSpinner').style.display = 'none';
+
+                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
+                if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
+                if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
+                if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = '';
+
+                document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
+            }
         });
 
     </script>
