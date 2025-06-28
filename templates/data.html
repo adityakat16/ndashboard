@@ -343,8 +343,8 @@
                 }
                 // Load data for all sheets on initial page load
                 await loadStockName();
-                loadAllSheetData();
-                insertCurrentDate();
+                await loadAllSheetData();
+                await insertCurrentDate();
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 // No showMessage call here, as per request
@@ -630,8 +630,29 @@
                     fetchSheetData('Quarterly Data', 'A:Z', currentStockSymbol), // PASS currentStockSymbol
                     fetchSheetData('Projections Data','A:Z', currentStockSymbol) // PASS currentStockSymbol
                 ]);
+                if (overallResponse.status === 'ready') {
+                    renderTable('overallTableContainer', overallResponse.data, 'Overall Data');
+                } else {
+                    console.error(overallResponse.message);
+                }
+                
+                if (projectionsResponse.status === 'ready') {
+                    renderTable('projectionsTableContainer', projectionsResponse.data, 'Projections Data');
+                } else {
+                    console.error(projectionsResponse.message);
+                }
+                
+                if (annualResponse.status === 'ready') {
+                    renderTable('annualTableContainer', annualResponse.data, 'Annual Data');
+                } else {
+                    console.error(annualResponse.message);
+                }
 
-                // ... (rest of the if/else if/else blocks for renderTable and console.error) ...
+                if (quarterlyResponse.status === 'ready') {
+                renderTable('quarterlyTableContainer', quarterlyResponse.data, 'Quarterly Data');
+                } else {    
+                    console.error(quarterlyResponse.message);
+                }
 
             } catch (error) {
                 console.error("Error loading all sheet data:", error);
@@ -648,15 +669,6 @@
                 if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
                 if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
                 if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = '';
-            }
-        }
-                // Ensure status messages are cleared even if not explicitly set initially
-                if (document.getElementById('overallStatusMessage')) document.getElementById('overallStatusMessage').textContent = '';
-                if (document.getElementById('annualStatusMessage')) document.getElementById('annualStatusMessage').textContent = '';
-                if (document.getElementById('quarterlyStatusMessage')) document.getElementById('quarterlyStatusMessage').textContent = '';
-                if (document.getElementById('projectionsStatusMessage')) document.getElementById('projectionsStatusMessage').textContent = '';
-
-                document.getElementById('refreshAllButton').style.display = 'block'; // Show refresh button
             }
         }
         
